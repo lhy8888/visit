@@ -23,6 +23,7 @@ const visitorRoutes = require('./src/routes/visitorRoutes');
 const configRoutes = require('./src/routes/configRoutes');
 const registrationRoutes = require('./src/routes/registrationRoutes');
 const receptionRoutes = require('./src/routes/receptionRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 
 /**
  * Création de l'application Express
@@ -79,6 +80,7 @@ app.get('/reception', (req, res) => {
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api', receptionRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api', configRoutes);
 
 /**
@@ -250,6 +252,15 @@ app.get('/api', (req, res) => {
         'POST /api/checkin/by-qr': 'Enregistrer un check-in par QR',
         'POST /api/checkout/:id': 'Enregistrer une sortie par identifiant',
         'POST /api/admin/login': 'Authentification admin',
+        'POST /api/admin/logout': 'Déconnexion admin',
+        'GET /api/admin/session': 'Vérifier la session admin',
+        'GET /api/admin/dashboard/today': 'Tableau de bord du jour',
+        'GET /api/admin/visitors': 'Lister les visiteurs avec filtres',
+        'GET /api/admin/stats/summary': 'Résumé statistique',
+        'GET /api/admin/export.csv': 'Exporter les visiteurs au format CSV',
+        'PATCH /api/admin/visitors/:id/void': 'Marquer un visiteur comme annulé',
+        'GET /api/admin/settings': 'Obtenir les paramètres administrateur',
+        'PUT /api/admin/settings': 'Mettre à jour les paramètres administrateur',
         'GET /api/admin/config': 'Obtenir la configuration complète',
         'PUT /api/admin/config': 'Mettre à jour la configuration',
         'PUT /api/admin/change-pin': 'Changer le code PIN',

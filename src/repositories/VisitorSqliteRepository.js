@@ -786,6 +786,54 @@ class VisitorSqliteRepository {
     }
   }
 
+  async markRegistrationVoided(id, options = {}) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+      const currentRow = this.findByIdStatement.get(id);
+      if (!currentRow) {
+        throw new AppError('Registration not found', 404);
+      }
+
+      if (currentRow.status === 'void') {
+        return {
+          registration: mapRowToRegistration(currentRow),
+          alreadyVoided: true
+        };
+      }
+
+      const now = options.now || new Date().toISOString();
+      const reason = options.reason || null;
+      const mergedRow = buildDbRow({
+        ...currentRow,
+        status: 'void',
+        statut: 'void',
+        notes: reason ? [currentRow.notes, reason].filter(Boolean).join(' | ') : currentRow.notes,
+        updated_at: now
+      }, currentRow);
+
+      await this._upsertRow(mergedRow);
+      await this._writeLegacySnapshot(await this._getAllRows());
+
+      logger.logUserAction('visitor_voided', {
+        visitorId: mergedRow.id,
+        registerNo: mergedRow.register_no,
+        reason
+      });
+
+      return {
+        registration: mapRowToRegistration(mergedRow),
+        alreadyVoided: false
+      };
+    } catch (error) {
+      logger.error('Error while voiding registration', {
+        error: error.message,
+        id,
+        options
+      });
+      throw error;
+    }
+  }
+
   async createRegistration(registrationData, options = {}) {
     try {
       await this._syncFromLegacySnapshotIfNeeded();

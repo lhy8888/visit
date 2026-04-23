@@ -143,13 +143,15 @@ label {
 
 input,
 textarea,
+select,
 button,
 .button-link {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
@@ -160,7 +162,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: rgba(116, 240, 194, 0.7);
   box-shadow: 0 0 0 4px rgba(116, 240, 194, 0.14);
@@ -404,6 +407,104 @@ button[disabled] {
   margin-top: 0;
 }
 
+.admin-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-banner {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-section {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-section + .admin-section {
+  margin-top: 8px;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-split {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 20px;
+}
+
+.admin-split .card {
+  min-height: 100%;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-muted {
+  color: var(--muted);
+}
+
+.admin-hidden {
+  display: none !important;
+}
+
+.admin-login-note {
+  margin-top: 0;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-item .toolbar {
+  margin-top: 0;
+}
+
+.settings-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-row span {
+  color: var(--muted);
+}
+
 .empty-state {
   padding: 10px 0 2px;
 }
@@ -427,7 +528,9 @@ button[disabled] {
   .panel-grid,
   .result-metrics,
   .reception-grid,
-  .metric-strip {
+  .metric-strip,
+  .admin-split,
+  .admin-stats {
     grid-template-columns: 1fr;
   }
 

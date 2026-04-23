@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { openDatabase, closeDatabase } = require('../src/db/sqlite');
+const AdminUserRepository = require('../src/repositories/AdminUserRepository');
 
 console.log('Initializing visitor management app...\n');
 
@@ -69,6 +70,8 @@ try {
 
   console.log('\nInitialising SQLite database...');
   openDatabase();
+  const adminRepository = new AdminUserRepository();
+  adminRepository.ensureDefaultAdmin();
   closeDatabase();
   console.log('SQLite database ready.');
 
@@ -81,8 +84,8 @@ try {
   console.log('2. Add your logo to public/images/logo.png');
   console.log('3. SQLite database visitor.db is ready in data/');
   console.log('4. Start the app with npm start');
-  console.log('5. Use the default admin PIN 123456');
-  console.log('6. Change the default PIN in admin settings');
+  console.log('5. Default admin account: admin / 123456');
+  console.log('6. You can still change the legacy PIN in admin settings');
 } catch (error) {
   console.error('Initialization failed:', error.message);
   process.exit(1);

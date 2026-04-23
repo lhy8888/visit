@@ -5,17 +5,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin - Visitor Register</title>
   <link rel="stylesheet" href="/style.css">
+  <script src="/admin.js" defer></script>
 </head>
 <body class="page-shell">
-  <main class="page">
+  <main class="page admin-layout">
     <section class="hero">
       <p class="eyebrow">Administration</p>
-      <h1>Admin dashboard placeholder</h1>
-      <p class="lead">The reception dashboard and reporting views will be wired in the next phase.</p>
+      <h1>Authenticated visitor dashboard</h1>
+      <p class="lead">Log in with the new admin account to review today's queue, search the history, export CSV, and manage settings. The legacy PIN login remains available during the transition.</p>
     </section>
 
-    <section class="card">
-      <p class="helper">This page is kept as the admin entrypoint while the new authenticated dashboard is being built.</p>
+    <section id="status-message" class="status" aria-live="polite"></section>
+
+    <section id="login-card" class="card admin-section">
+      <div class="admin-header">
+        <div>
+          <p class="eyebrow">Sign in</p>
+          <h2>Admin access</h2>
+          <p class="helper admin-login-note">Use the new username/password account, or enter the legacy PIN if you are migrating from the old workflow.</p>
+        </div>
+        <span class="pill blue">Session cookie</span>
+      </div>
+
+      <form id="login-form" class="form-grid">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" placeholder="admin">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="123456">
+        </div>
+        <div class="field full">
+          <label for="pin">Legacy PIN</label>
+          <input id="pin" name="pin" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+        </div>
+        <div class="field full">
+          <div class="admin-actions">
+            <button id="login-button" type="submit">Sign in</button>
+            <button id="clear-login" type="button" class="secondary">Clear form</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section id="dashboard" class="admin-grid admin-hidden">
+      <section class="card admin-section">
+        <div class="admin-header">
+          <div>
+            <p class="eyebrow">Session</p>
+            <h2>Welcome back</h2>
+            <p id="session-banner" class="admin-muted">Loading session...</p>
+          </div>
+          <div class="admin-actions">
+            <button id="refresh-dashboard" type="button" class="secondary">Refresh</button>
+            <button id="logout-button" type="button" class="secondary">Log out</button>
+          </div>
+        </div>
+
+        <div id="summary-metrics" class="admin-stats"></div>
+      </section>
+
+      <section class="card admin-section">
+        <div class="admin-header">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2>Filter visitors</h2>
+            <p class="helper compact">Search by date range, status, or keyword. The CSV export uses the current filter set.</p>
+          </div>
+          <div class="admin-actions">
+            <button id="export-button" type="button" class="secondary">Export CSV</button>
+          </div>
+        </div>
+
+        <form id="history-form" class="form-grid">
+          <div class="field">
+            <label for="history-from">From</label>
+            <input id="history-from" name="from" type="date">
+          </div>
+          <div class="field">
+            <label for="history-to">To</label>
+            <input id="history-to" name="to" type="date">
+          </div>
+          <div class="field">
+            <label for="history-status">Status</label>
+            <select id="history-status" name="status">
+              <option value="">All statuses</option>
+              <option value="registered">Registered</option>
+              <option value="checked_in">Checked in</option>
+              <option value="checked_out">Checked out</option>
+              <option value="void">Void</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="history-keyword">Keyword</label>
+            <input id="history-keyword" name="keyword" placeholder="Visitor name, company, host, register no...">
+          </div>
+          <div class="field full">
+            <div class="admin-actions">
+              <button type="submit">Apply filters</button>
+              <button id="history-reset" type="button" class="secondary">Reset</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-split">
+        <section class="card admin-section">
+          <div class="admin-header">
+            <div>
+              <p class="eyebrow">Today</p>
+              <h2>Reception overview</h2>
+            </div>
+            <span id="today-date-pill" class="pill accent"></span>
+          </div>
+
+          <div id="today-metrics" class="metric-strip"></div>
+
+          <div class="list-panel">
+            <div class="list-header">
+              <h3>Waiting</h3>
+              <span id="today-pending-count" class="pill"></span>
+            </div>
+            <div id="today-pending-list" class="list"></div>
+          </div>
+
+          <div class="list-panel">
+            <div class="list-header">
+              <h3>Checked in</h3>
+              <span id="today-checkedin-count" class="pill"></span>
+            </div>
+            <div id="today-checkedin-list" class="list"></div>
+          </div>
+
+          <div class="list-panel">
+            <div class="list-header">
+              <h3>Future</h3>
+              <span id="today-future-count" class="pill"></span>
+            </div>
+            <div id="today-future-list" class="list"></div>
+          </div>
+        </section>
+
+        <section class="card admin-section">
+          <div class="admin-header">
+            <div>
+              <p class="eyebrow">Settings</p>
+              <h2>Site configuration</h2>
+            </div>
+          </div>
+
+          <div id="settings-list" class="settings-list"></div>
+
+          <div class="list-panel">
+            <div class="list-header">
+              <h3>Filtered history</h3>
+              <span id="history-count" class="pill"></span>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </div>
+        </section>
+      </section>
     </section>
   </main>
 </body>
