@@ -194,16 +194,6 @@ app.post('/api/admin/login', async (req, res, next) => {
   }
 });
 
-app.post('/api/admin/logo', async (req, res, next) => {
-  try {
-    const ConfigController = require('./src/controllers/ConfigController');
-    const controller = new ConfigController();
-    await controller.updateLogo(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
 /**
  * Health check endpoint
  */

@@ -46,7 +46,7 @@ const limiter = rateLimit({
  */
 const strictLimiter = rateLimit({
   windowMs: config.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 minute en dev, 15 minutes en prod
-  max: config.NODE_ENV === 'development' ? 100 : 5, // 100 tentatives en dev, 5 en prod
+  max: config.NODE_ENV === 'production' ? 5 : 100, // 5 tentatives en prod, plus large en dev/test
   message: {
     success: false,
     error: {

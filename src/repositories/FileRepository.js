@@ -69,7 +69,21 @@ class FileRepository {
   async write(data) {
     try {
       await this.ensureDirectoryExists();
-      await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf8');
+      const tempPath = `${this.filePath}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const payload = JSON.stringify(data, null, 2);
+
+      await fs.writeFile(tempPath, payload, 'utf8');
+
+      try {
+        await fs.rename(tempPath, this.filePath);
+      } catch (renameError) {
+        if (renameError.code === 'EEXIST' || renameError.code === 'EPERM') {
+          await fs.unlink(this.filePath).catch(() => {});
+          await fs.rename(tempPath, this.filePath);
+        } else {
+          throw renameError;
+        }
+      }
       
       logger.debug('Données écrites avec succès', { 
         filePath: this.filePath, 

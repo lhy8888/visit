@@ -228,7 +228,7 @@ describe('🖼️ Tests - Upload Logo', () => {
       const extensions = ['png', 'jpg', 'jpeg', 'gif', 'svg'];
       
       for (const ext of extensions) {
-        const testFilePath = path.join(__dirname, `test-logo.${ext}`);
+        const testFilePath = path.join(__dirname, `test-logo-error-${ext}.${ext}`);
         
         // Créer un fichier de test minimal pour chaque extension
         let testData;
@@ -285,7 +285,7 @@ describe('🖼️ Tests - Upload Logo', () => {
       expect(logoPath).toMatch(/^\/images\/logo-\d+-\d+\.png$/);
       
       // Vérifier qu'il n'y a pas de caractères dangereux
-      expect(logoPath).not.toMatch(/[<>:"/\\|?*]/);
+      expect(logoPath).not.toMatch(/[<>:"\\|?*]/);
     });
   });
 });

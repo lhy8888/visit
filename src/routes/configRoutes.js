@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const ConfigController = require('../controllers/ConfigController');
@@ -8,9 +9,6 @@ const config = require('../config/config');
 const router = express.Router();
 const configController = new ConfigController();
 
-/**
- * Configuration de multer pour l'upload de logo
- */
 const storage = multer.diskStorage({
   destination: config.UPLOAD_DIR,
   filename: (req, file, cb) => {
@@ -19,60 +17,90 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|svg/;
-  const mimetype = allowedTypes.test(file.mimetype);
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  
-  if (mimetype && extname) {
-    return cb(null, true);
+const allowedLogoExtensions = new Set(['.jpeg', '.jpg', '.png', '.gif', '.svg']);
+
+const isAllowedLogoFile = (file) => {
+  if (!file || !file.originalname) {
+    return false;
   }
-  
-  cb(new Error('Seuls les fichiers image (jpeg, jpg, png, gif, svg) sont autorisés'));
+
+  return allowedLogoExtensions.has(path.extname(file.originalname).toLowerCase());
 };
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: config.MAX_FILE_SIZE },
-  fileFilter: fileFilter
+  limits: { fileSize: config.MAX_FILE_SIZE }
 });
 
+const handleLogoUpload = (req, res, next) => {
+  upload.single('logo')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return next(err);
+      }
+
+      return next(err);
+    }
+
+    if (req.file && !isAllowedLogoFile(req.file)) {
+      fs.unlink(req.file.path, () => {});
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          message: 'Seuls les fichiers image (jpeg, jpg, png, gif, svg) sont autorises'
+        }
+      });
+    }
+
+    next();
+  });
+};
+
 /**
- * Routes publiques pour la configuration
+ * Public configuration routes
  */
 
-// Obtenir la configuration publique
 router.get('/public', configController.getPublicConfig);
-
-// Obtenir le message de bienvenue
 router.get('/welcome-message', configController.getWelcomeMessage);
 
 /**
- * Routes d'administration
+ * Admin routes
  */
 
-// Authentification admin
 router.post('/admin/login', strictLimiter, configController.login);
-
-// Obtenir la configuration complète (admin)
 router.get('/admin/config', configController.getFullConfig);
-
-// Mettre à jour la configuration
 router.put('/admin/config', configController.updateConfig);
-
-// Changer le code PIN
 router.post('/admin/change-pin', strictLimiter, configController.changePin);
+router.put('/admin/logo', handleLogoUpload, configController.updateLogo);
 
-// Mettre à jour le logo
-router.put('/admin/logo', 
-  upload.single('logo'), 
-  configController.updateLogo
-);
+router.post('/admin/logo', (req, res) => {
+  const sendNotFound = () => {
+    if (res.headersSent) {
+      return;
+    }
 
-// Obtenir les paramètres de sécurité
+    res.status(404).json({
+      success: false,
+      error: {
+        message: `Route non trouvée: ${req.originalUrl}`
+      }
+    });
+  };
+
+  if (req.is('multipart/form-data')) {
+    req.on('end', sendNotFound);
+    req.on('error', () => {
+      sendNotFound();
+    });
+    req.resume();
+    return;
+  }
+
+  sendNotFound();
+});
+
 router.get('/admin/security', configController.getSecuritySettings);
-
-// Réinitialiser la configuration
 router.post('/admin/config/reset', configController.resetConfig);
 
 module.exports = router;

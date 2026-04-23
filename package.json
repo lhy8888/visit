@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "init": "node scripts/init.js",
+    "migrate:json-to-sqlite": "node scripts/migrate-json-to-sqlite.js",
     "postinstall": "npm run init",
     "test": "jest",
     "test:watch": "jest --watch",

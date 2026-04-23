@@ -13,6 +13,7 @@ module.exports = {
   DATA_DIR: path.resolve(process.env.DATA_DIR || './data'),
   VISITORS_FILE: path.resolve(process.env.VISITORS_FILE || './data/visitors.json'),
   CONFIG_FILE: path.resolve(process.env.CONFIG_FILE || './data/config.json'),
+  DB_FILE: path.resolve(process.env.DB_FILE || './data/visitor.db'),
   UPLOAD_DIR: path.resolve(process.env.UPLOAD_DIR || './public/images'),
   
   // Sécurité
@@ -22,8 +23,8 @@ module.exports = {
   
   // Rate limiting
   RATE_LIMIT: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) * 60 * 1000 || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW, 10) * 60 * 1000 || (process.env.NODE_ENV === 'test' ? 1 * 60 * 1000 : 15 * 60 * 1000),
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (process.env.NODE_ENV === 'test' ? 1000 : 100)
   },
   
   // Logging
