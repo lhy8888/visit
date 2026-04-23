@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const Visitor = require('../models/Visitor');
 const { AppError } = require('../middleware/errorHandler');
 const config = require('../config/config');
@@ -152,7 +152,7 @@ function buildDbRow(visitorData, existingRow = {}) {
   const notes = data.notes ?? existingRow.notes ?? null;
 
   return {
-    id: data.id || existingRow.id || uuidv4(),
+    id: data.id || existingRow.id || randomUUID(),
     register_no: data.register_no ?? existingRow.register_no ?? null,
     pin_code: data.pin_code ?? existingRow.pin_code ?? null,
     qr_token: data.qr_token ?? existingRow.qr_token ?? null,

@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const config = require('../config/config');
 
 /**
@@ -7,7 +7,7 @@ const config = require('../config/config');
  */
 class Visitor {
   constructor(data = {}) {
-    this.id = data.id || uuidv4();
+    this.id = data.id || randomUUID();
     this.nom = data.nom;
     this.prenom = data.prenom;
     this.societe = data.societe || null;
