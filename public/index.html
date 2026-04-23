@@ -1,15 +1,71 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Visitor Register</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <main>
-    <h1>Visitor Register</h1>
-    <p>Public registration entrypoint.</p>
+<body class="page-shell">
+  <main class="page">
+    <section class="hero">
+      <div class="brand">
+        <img id="site-logo" class="brand-logo" src="/images/logo.png" alt="Company logo" hidden>
+        <div>
+          <p class="eyebrow">Visitor registration</p>
+          <h1 id="page-title">Book your visit in one minute</h1>
+        </div>
+      </div>
+      <p id="welcome-message" class="lead">Please fill in your details and submit the form before arriving at the office.</p>
+    </section>
+
+    <section class="card">
+      <form id="registration-form" class="form-grid" novalidate>
+        <div class="field">
+          <label for="visitor_name">Visitor name</label>
+          <input id="visitor_name" name="visitor_name" type="text" autocomplete="name" required placeholder="Jane Doe">
+        </div>
+
+        <div class="field">
+          <label for="company">Company</label>
+          <input id="company" name="company" type="text" autocomplete="organization" placeholder="Acme Ltd">
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="jane@example.com">
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+44 7000 000000">
+        </div>
+
+        <div class="field">
+          <label for="host_name">Host name</label>
+          <input id="host_name" name="host_name" type="text" required placeholder="John Smith">
+        </div>
+
+        <div class="field">
+          <label for="scheduled_date">Planned visit date</label>
+          <input id="scheduled_date" name="scheduled_date" type="date" required>
+        </div>
+
+        <div class="field full">
+          <label for="visit_purpose">Visit purpose</label>
+          <textarea id="visit_purpose" name="visit_purpose" placeholder="Meeting, delivery, interview, etc."></textarea>
+        </div>
+
+        <div class="field full">
+          <button id="submit-button" type="submit">Submit registration</button>
+        </div>
+      </form>
+
+      <p class="helper">After submission, you will receive a register number, a PIN and a QR code for reception check-in.</p>
+      <p id="status-message" class="status" aria-live="polite"></p>
+    </section>
   </main>
+
+  <script src="/app.js" defer></script>
 </body>
 </html>

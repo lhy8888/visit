@@ -62,6 +62,7 @@ const handleLogoUpload = (req, res, next) => {
  */
 
 router.get('/public', configController.getPublicConfig);
+router.get('/public/config', configController.getPublicConfig);
 router.get('/welcome-message', configController.getWelcomeMessage);
 
 /**

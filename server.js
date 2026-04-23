@@ -21,6 +21,7 @@ const {
 // Routes
 const visitorRoutes = require('./src/routes/visitorRoutes');
 const configRoutes = require('./src/routes/configRoutes');
+const registrationRoutes = require('./src/routes/registrationRoutes');
 
 /**
  * Création de l'application Express
@@ -63,10 +64,15 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+app.get('/result/:registerNo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'result.html'));
+});
+
 /**
  * Routes API
  */
 app.use('/api/visitors', visitorRoutes);
+app.use('/api/registrations', registrationRoutes);
 app.use('/api', configRoutes);
 
 /**
@@ -229,7 +235,10 @@ app.get('/api', (req, res) => {
       },
       config: {
         'GET /api/public': 'Obtenir la configuration publique',
+        'GET /api/public/config': 'Obtenir la configuration publique',
         'GET /api/welcome-message': 'Obtenir le message de bienvenue',
+        'POST /api/registrations': 'Creer une pre-registration visiteur',
+        'GET /api/registrations/:registerNo': 'Obtenir une pre-registration par numero',
         'POST /api/admin/login': 'Authentification admin',
         'GET /api/admin/config': 'Obtenir la configuration complète',
         'PUT /api/admin/config': 'Mettre à jour la configuration',
