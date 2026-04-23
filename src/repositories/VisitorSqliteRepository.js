@@ -119,6 +119,33 @@ function mapRowToRegistration(row) {
   };
 }
 
+function mapRowToLegacySnapshot(row) {
+  if (!row) {
+    return null;
+  }
+
+  const visitor = mapRowToVisitor(row).toJSON();
+
+  return {
+    ...visitor,
+    register_no: row.register_no || null,
+    pin_code: row.pin_code || null,
+    qr_token: row.qr_token || null,
+    visitor_name: row.visitor_name || visitor.visitor_name || null,
+    company: row.company || null,
+    host_name: row.host_name || null,
+    visit_purpose: row.visit_purpose || null,
+    scheduled_date: row.scheduled_date || null,
+    registered_at: row.registered_at || null,
+    checked_in_at: row.checked_in_at || null,
+    checked_out_at: row.checked_out_at || null,
+    source: row.source || 'web',
+    notes: row.notes || null,
+    created_at: row.created_at || null,
+    updated_at: row.updated_at || null
+  };
+}
+
 function buildDbRow(visitorData, existingRow = {}) {
   const data = normalizeVisitorInput(visitorData);
   const now = new Date().toISOString();
@@ -180,6 +207,19 @@ function buildDbRow(visitorData, existingRow = {}) {
     heureSortie: hasValue('heureSortie') ? data.heureSortie : (existingRow.heureSortie ?? checkedOutAt),
     statut: hasValue('statut') ? data.statut : (existingRow.statut ?? (checkedOutAt ? 'parti' : 'present'))
   };
+}
+
+function normalizeStatusList(statuses) {
+  if (statuses === undefined || statuses === null) {
+    return [];
+  }
+
+  const list = Array.isArray(statuses) ? statuses : [statuses];
+  return [...new Set(list.map((status) => String(status || '').trim()).filter(Boolean))];
+}
+
+function escapeLikePattern(value) {
+  return String(value).replace(/[\\%_]/g, '\\$&');
 }
 
 class VisitorSqliteRepository {
@@ -281,7 +321,7 @@ class VisitorSqliteRepository {
     }
 
     await this._ensureLegacyDirectory();
-    const payload = JSON.stringify(rows.map((row) => mapRowToVisitor(row).toJSON()), null, 2);
+    const payload = JSON.stringify(rows.map((row) => mapRowToLegacySnapshot(row)), null, 2);
     await fs.writeFile(this.legacyFilePath, payload, 'utf8');
     const stats = await fs.stat(this.legacyFilePath);
     this.lastLegacySyncMtime = stats.mtimeMs;
@@ -359,6 +399,12 @@ class VisitorSqliteRepository {
   _getRegisterSequenceCount(dateKey) {
     const row = this.countRegisteredOnDateStatement.get(dateKey);
     return Number(row?.count || 0);
+  }
+
+  _queryRegistrationRows(whereClauses = [], params = [], orderBy = 'scheduled_date ASC, registered_at ASC, id ASC') {
+    const clauses = whereClauses.filter(Boolean);
+    const sql = `SELECT * FROM visitors${clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : ''} ORDER BY ${orderBy}`;
+    return this.db.prepare(sql).all(...params);
   }
 
   async findAll() {
@@ -484,6 +530,257 @@ class VisitorSqliteRepository {
       logger.error('Error while finding registration by pin code', {
         error: error.message,
         pinCode
+      });
+      throw error;
+    }
+  }
+
+  async findRegistrationById(id) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+      const normalized = String(id || '').trim();
+      if (!normalized) {
+        return null;
+      }
+
+      const row = this.findByIdStatement.get(normalized);
+      return row ? mapRowToRegistration(row) : null;
+    } catch (error) {
+      logger.error('Error while finding registration by id', {
+        error: error.message,
+        id
+      });
+      throw error;
+    }
+  }
+
+  async searchRegistrations(filters = {}) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+
+      const whereClauses = [];
+      const params = [];
+
+      const scheduledDate = normalizeDateOnly(filters.scheduledDate || filters.date);
+      if (scheduledDate) {
+        whereClauses.push('scheduled_date = ?');
+        params.push(scheduledDate);
+      }
+
+      const scheduledFrom = normalizeDateOnly(filters.scheduledFrom || filters.from || filters.fromDate);
+      if (scheduledFrom) {
+        whereClauses.push('scheduled_date >= ?');
+        params.push(scheduledFrom);
+      }
+
+      const scheduledTo = normalizeDateOnly(filters.scheduledTo || filters.to || filters.toDate);
+      if (scheduledTo) {
+        whereClauses.push('scheduled_date <= ?');
+        params.push(scheduledTo);
+      }
+
+      const scheduledAfter = normalizeDateOnly(filters.scheduledAfter || filters.after || filters.futureAfter);
+      if (scheduledAfter) {
+        whereClauses.push('scheduled_date > ?');
+        params.push(scheduledAfter);
+      }
+
+      const statuses = normalizeStatusList(filters.statuses ?? filters.status);
+      if (statuses.length > 0) {
+        whereClauses.push(`status IN (${statuses.map(() => '?').join(', ')})`);
+        params.push(...statuses);
+      }
+
+      const keyword = String(filters.keyword || '').trim();
+      if (keyword) {
+        const like = `%${escapeLikePattern(keyword)}%`;
+        whereClauses.push(`(
+          visitor_name LIKE ? ESCAPE '\\'
+          OR company LIKE ? ESCAPE '\\'
+          OR email LIKE ? ESCAPE '\\'
+          OR phone LIKE ? ESCAPE '\\'
+          OR host_name LIKE ? ESCAPE '\\'
+          OR register_no LIKE ? ESCAPE '\\'
+          OR pin_code LIKE ? ESCAPE '\\'
+          OR qr_token LIKE ? ESCAPE '\\'
+          OR notes LIKE ? ESCAPE '\\'
+        )`);
+        params.push(like, like, like, like, like, like, like, like, like);
+      }
+
+      const orderBy = filters.orderBy || 'scheduled_date ASC, registered_at ASC, id ASC';
+      const rows = this._queryRegistrationRows(whereClauses, params, orderBy);
+      return rows.map((row) => mapRowToRegistration(row));
+    } catch (error) {
+      logger.error('Error while searching registrations', {
+        error: error.message,
+        filters
+      });
+      throw error;
+    }
+  }
+
+  async findRegistrationsByScheduledDate(scheduledDate, statuses = null) {
+    return this.searchRegistrations({
+      scheduledDate,
+      status: statuses,
+      orderBy: 'registered_at ASC, id ASC'
+    });
+  }
+
+  async findFutureRegistrations(afterDate, statuses = ['registered', 'checked_in']) {
+    return this.searchRegistrations({
+      scheduledAfter: afterDate,
+      status: statuses,
+      orderBy: 'scheduled_date ASC, registered_at ASC, id ASC'
+    });
+  }
+
+  async getReceptionSnapshot(date = new Date()) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+      const dateKey = normalizeDateOnly(date) || new Date().toISOString().slice(0, 10);
+      const pending = this._queryRegistrationRows(
+        ['scheduled_date = ?', "status IN ('registered')"],
+        [dateKey],
+        'registered_at ASC, id ASC'
+      ).map((row) => mapRowToRegistration(row));
+      const checkedIn = this._queryRegistrationRows(
+        ['scheduled_date = ?', "status IN ('checked_in')"],
+        [dateKey],
+        'registered_at ASC, id ASC'
+      ).map((row) => mapRowToRegistration(row));
+      const future = this._queryRegistrationRows(
+        ['scheduled_date > ?', "status IN ('registered', 'checked_in')"],
+        [dateKey],
+        'scheduled_date ASC, registered_at ASC, id ASC'
+      ).map((row) => mapRowToRegistration(row));
+
+      return {
+        date: dateKey,
+        pending,
+        checkedIn,
+        future,
+        counts: {
+          pending: pending.length,
+          checkedIn: checkedIn.length,
+          future: future.length,
+          total: pending.length + checkedIn.length + future.length
+        }
+      };
+    } catch (error) {
+      logger.error('Error while building reception snapshot', {
+        error: error.message,
+        date
+      });
+      throw error;
+    }
+  }
+
+  async markRegistrationCheckedIn(id, options = {}) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+      const currentRow = this.findByIdStatement.get(id);
+      if (!currentRow) {
+        throw new AppError('Registration not found', 404);
+      }
+
+      if (currentRow.status === 'checked_in') {
+        return {
+          registration: mapRowToRegistration(currentRow),
+          alreadyCheckedIn: true
+        };
+      }
+
+      if (currentRow.status === 'checked_out') {
+        throw new AppError('Registration already checked out', 409);
+      }
+
+      if (currentRow.status === 'void') {
+        throw new AppError('Registration is void', 409);
+      }
+
+      const now = options.now || new Date().toISOString();
+      const mergedRow = buildDbRow({
+        ...currentRow,
+        checked_in_at: now,
+        checked_out_at: null,
+        heureArrivee: now,
+        heureSortie: null,
+        status: 'checked_in',
+        statut: 'present',
+        updated_at: now
+      }, currentRow);
+
+      await this._upsertRow(mergedRow);
+      await this._writeLegacySnapshot(await this._getAllRows());
+
+      logger.logUserAction('visitor_checkin_reception', {
+        visitorId: mergedRow.id,
+        registerNo: mergedRow.register_no,
+        pinCode: mergedRow.pin_code
+      });
+
+      return {
+        registration: mapRowToRegistration(mergedRow),
+        alreadyCheckedIn: false
+      };
+    } catch (error) {
+      logger.error('Error while checking in registration', {
+        error: error.message,
+        id,
+        options
+      });
+      throw error;
+    }
+  }
+
+  async markRegistrationCheckedOut(id, options = {}) {
+    try {
+      await this._syncFromLegacySnapshotIfNeeded();
+      const currentRow = this.findByIdStatement.get(id);
+      if (!currentRow) {
+        throw new AppError('Registration not found', 404);
+      }
+
+      if (currentRow.status === 'checked_out') {
+        return {
+          registration: mapRowToRegistration(currentRow),
+          alreadyCheckedOut: true
+        };
+      }
+
+      if (currentRow.status !== 'checked_in') {
+        throw new AppError('Registration must be checked in before checkout', 409);
+      }
+
+      const now = options.now || new Date().toISOString();
+      const mergedRow = buildDbRow({
+        ...currentRow,
+        checked_out_at: now,
+        heureSortie: now,
+        status: 'checked_out',
+        statut: 'parti',
+        updated_at: now
+      }, currentRow);
+
+      await this._upsertRow(mergedRow);
+      await this._writeLegacySnapshot(await this._getAllRows());
+
+      logger.logUserAction('visitor_checkout_reception', {
+        visitorId: mergedRow.id,
+        registerNo: mergedRow.register_no
+      });
+
+      return {
+        registration: mapRowToRegistration(mergedRow),
+        alreadyCheckedOut: false
+      };
+    } catch (error) {
+      logger.error('Error while checking out registration', {
+        error: error.message,
+        id,
+        options
       });
       throw error;
     }

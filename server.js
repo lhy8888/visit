@@ -22,6 +22,7 @@ const {
 const visitorRoutes = require('./src/routes/visitorRoutes');
 const configRoutes = require('./src/routes/configRoutes');
 const registrationRoutes = require('./src/routes/registrationRoutes');
+const receptionRoutes = require('./src/routes/receptionRoutes');
 
 /**
  * Création de l'application Express
@@ -68,11 +69,16 @@ app.get('/result/:registerNo', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'result.html'));
 });
 
+app.get('/reception', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'reception.html'));
+});
+
 /**
  * Routes API
  */
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/registrations', registrationRoutes);
+app.use('/api', receptionRoutes);
 app.use('/api', configRoutes);
 
 /**
@@ -239,6 +245,10 @@ app.get('/api', (req, res) => {
         'GET /api/welcome-message': 'Obtenir le message de bienvenue',
         'POST /api/registrations': 'Creer une pre-registration visiteur',
         'GET /api/registrations/:registerNo': 'Obtenir une pre-registration par numero',
+        'GET /api/reception/today': 'Obtenir le tableau de bord reception du jour',
+        'POST /api/checkin/by-pin': 'Enregistrer un check-in par PIN ou numero',
+        'POST /api/checkin/by-qr': 'Enregistrer un check-in par QR',
+        'POST /api/checkout/:id': 'Enregistrer une sortie par identifiant',
         'POST /api/admin/login': 'Authentification admin',
         'GET /api/admin/config': 'Obtenir la configuration complète',
         'PUT /api/admin/config': 'Mettre à jour la configuration',

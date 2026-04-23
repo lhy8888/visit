@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reception - Visitor Register</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="page-shell">
+  <main class="page">
+    <section class="hero">
+      <div class="brand">
+        <img id="site-logo" class="brand-logo" src="/images/logo.png" alt="Company logo" hidden>
+        <div>
+          <p class="eyebrow">Reception</p>
+          <h1 id="page-title">Check-in command centre</h1>
+        </div>
+      </div>
+      <p class="lead">Use the PIN, register number or QR code to register visitors at the front desk. The live queue below shows who is waiting, who has already arrived, and what is still scheduled later today.</p>
+
+      <div class="search-row">
+        <form id="lookup-form" class="search-row" novalidate>
+          <input id="identifier-input" name="identifier" type="text" autocomplete="off" placeholder="PIN, register number or QR token">
+          <button id="lookup-button" type="submit">Check in</button>
+        </form>
+        <button id="start-scan-button" class="secondary" type="button">Start camera scan</button>
+        <button id="stop-scan-button" class="secondary" type="button" hidden>Stop scan</button>
+        <button id="refresh-button" class="secondary" type="button">Refresh queue</button>
+      </div>
+
+      <p id="status-message" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="reception-grid">
+      <article class="card dashboard-card">
+        <div class="metric-strip">
+          <div class="metric">
+            <span>Today waiting</span>
+            <strong id="pending-count">0</strong>
+          </div>
+          <div class="metric">
+            <span>Today checked in</span>
+            <strong id="checkedin-count">0</strong>
+          </div>
+          <div class="metric">
+            <span>Future bookings</span>
+            <strong id="future-count">0</strong>
+          </div>
+        </div>
+
+        <div class="scanner-card">
+          <div class="list-header">
+            <div>
+              <p class="eyebrow">Camera scan</p>
+              <h2>Scan QR with the device camera</h2>
+            </div>
+            <span class="pill accent" id="scanner-state">Idle</span>
+          </div>
+
+          <video id="scanner-video" class="scanner-video" autoplay muted playsinline hidden></video>
+          <p id="scanner-message" class="helper">Use the built-in QR detector in a supported browser. If the camera is unavailable, the manual PIN entry above still works.</p>
+        </div>
+      </article>
+
+      <article class="card dashboard-card">
+        <div class="list-header">
+          <div>
+            <p class="eyebrow">Live queue</p>
+            <h2 id="dashboard-date">Today</h2>
+          </div>
+        </div>
+
+        <section class="list-panel">
+          <div class="list-header">
+            <h3>Today waiting</h3>
+            <span id="pending-badge" class="pill">0</span>
+          </div>
+          <div id="pending-list" class="list"></div>
+        </section>
+
+        <section class="list-panel">
+          <div class="list-header">
+            <h3>Today checked in</h3>
+            <span id="checkedin-badge" class="pill">0</span>
+          </div>
+          <div id="checkedin-list" class="list"></div>
+        </section>
+
+        <section class="list-panel">
+          <div class="list-header">
+            <h3>Future registrations</h3>
+            <span id="future-badge" class="pill">0</span>
+          </div>
+          <div id="future-list" class="list"></div>
+        </section>
+      </article>
+    </section>
+  </main>
+
+  <script src="/reception.js" defer></script>
+</body>
+</html>
