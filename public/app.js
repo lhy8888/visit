@@ -23,6 +23,12 @@ async function loadPublicConfig() {
   try {
     const response = await fetch('/api/public/config');
     if (!response.ok) {
+      if (welcomeMessage) {
+        welcomeMessage.textContent = 'Pre-register before you arrive.';
+      }
+      if (pageTitle) {
+        pageTitle.textContent = 'Visitor Access';
+      }
       return;
     }
 
@@ -31,10 +37,14 @@ async function loadPublicConfig() {
 
     if (config.welcomeMessage && welcomeMessage) {
       welcomeMessage.textContent = config.welcomeMessage;
+    } else if (welcomeMessage) {
+      welcomeMessage.textContent = 'Pre-register before you arrive.';
     }
 
     if (config.siteTitle && pageTitle) {
       pageTitle.textContent = config.siteTitle;
+    } else if (pageTitle) {
+      pageTitle.textContent = 'Visitor Access';
     }
 
     if (config.logoPath && siteLogo) {

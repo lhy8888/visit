@@ -3,6 +3,9 @@ const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { DEFAULT_TIME_ZONE } = require('../utils/registerNo');
 
+const DEFAULT_SITE_TITLE = 'Visitor Access';
+const DEFAULT_WELCOME_MESSAGE = 'Pre-register before you arrive.';
+
 function toBooleanSetting(value) {
   if (typeof value === 'boolean') {
     return value;
@@ -23,12 +26,12 @@ function toNumericSetting(value, fallback = null) {
 
 function normalizePublicSettings(rawSettings = {}) {
   return {
-    siteTitle: rawSettings.site_title || rawSettings.siteTitle || 'Visitor Register',
-    welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || 'Bienvenue dans notre entreprise',
+    siteTitle: rawSettings.site_title || rawSettings.siteTitle || DEFAULT_SITE_TITLE,
+    welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
     logoPath: rawSettings.logo_path || rawSettings.logoPath || '/images/logo.png',
     defaultTimezone: rawSettings.default_timezone || rawSettings.defaultTimezone || DEFAULT_TIME_ZONE,
     pinLength: toNumericSetting(rawSettings.pin_length || rawSettings.pinLength, 6),
-    dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 30),
+    dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 365),
     enableQrCheckin: toBooleanSetting(rawSettings.enable_qr_checkin ?? rawSettings.enableQrCheckin ?? true),
     enablePinCheckin: toBooleanSetting(rawSettings.enable_pin_checkin ?? rawSettings.enablePinCheckin ?? true)
   };
@@ -44,7 +47,7 @@ class ConfigService {
       const rawSettings = await this.settingsRepository.getAll();
       return normalizePublicSettings(rawSettings);
     } catch (error) {
-      logger.error('Erreur lors de la recuperation de la configuration publique', {
+      logger.error('Failed to load public configuration', {
         error: error.message
       });
       throw error;
@@ -54,9 +57,9 @@ class ConfigService {
   async getWelcomeMessage() {
     try {
       const configSnapshot = normalizePublicSettings(await this.settingsRepository.getAll());
-      return { message: configSnapshot.welcomeMessage || 'Bienvenue' };
+      return { message: configSnapshot.welcomeMessage || DEFAULT_WELCOME_MESSAGE };
     } catch (error) {
-      logger.error('Erreur lors de la recuperation du message de bienvenue', {
+      logger.error('Failed to load welcome message', {
         error: error.message
       });
       throw error;

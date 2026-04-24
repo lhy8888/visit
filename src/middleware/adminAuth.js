@@ -7,7 +7,7 @@ async function requireAdminAuth(req, res, next) {
   try {
     const session = await authService.getSessionFromRequest(req);
     if (!session) {
-      throw new AppError('Session administrateur requise', 401);
+      throw new AppError('Admin session required', 401);
     }
 
     req.adminSession = session;

@@ -2,7 +2,7 @@ const Joi = require('joi');
 const { randomUUID } = require('crypto');
 const config = require('../config/config');
 
-function legacyStatusFrom(status, heureSortie) {
+function statusLabelFrom(status, heureSortie) {
   if (status === 'registered') {
     return 'registered';
   }
@@ -18,9 +18,6 @@ function legacyStatusFrom(status, heureSortie) {
   return 'present';
 }
 
-/**
- * Legacy visitor model kept for compatibility with the old workflow.
- */
 class Visitor {
   constructor(data = {}) {
     this.id = data.id || randomUUID();
@@ -33,7 +30,7 @@ class Visitor {
     this.heureArrivee = data.heureArrivee !== undefined ? data.heureArrivee : new Date().toISOString();
     this.heureSortie = data.heureSortie !== undefined ? data.heureSortie : null;
     this.status = data.status || (this.heureSortie ? 'checked_out' : 'checked_in');
-    this.statut = data.statut || legacyStatusFrom(this.status, this.heureSortie);
+    this.statut = data.statut || statusLabelFrom(this.status, this.heureSortie);
   }
 
   static get checkInSchema() {

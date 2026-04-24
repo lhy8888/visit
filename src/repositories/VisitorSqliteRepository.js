@@ -1,5 +1,3 @@
-const fs = require('fs').promises;
-const path = require('path');
 const { randomUUID } = require('crypto');
 const Visitor = require('../models/Visitor');
 const { AppError } = require('../middleware/errorHandler');
@@ -119,33 +117,6 @@ function mapRowToRegistration(row) {
   };
 }
 
-function mapRowToLegacySnapshot(row) {
-  if (!row) {
-    return null;
-  }
-
-  const visitor = mapRowToVisitor(row).toJSON();
-
-  return {
-    ...visitor,
-    register_no: row.register_no || null,
-    pin_code: row.pin_code || null,
-    qr_token: row.qr_token || null,
-    visitor_name: row.visitor_name || visitor.visitor_name || null,
-    company: row.company || null,
-    host_name: row.host_name || null,
-    visit_purpose: row.visit_purpose || null,
-    scheduled_date: row.scheduled_date || null,
-    registered_at: row.registered_at || null,
-    checked_in_at: row.checked_in_at || null,
-    checked_out_at: row.checked_out_at || null,
-    source: row.source || 'web',
-    notes: row.notes || null,
-    created_at: row.created_at || null,
-    updated_at: row.updated_at || null
-  };
-}
-
 function buildDbRow(visitorData, existingRow = {}) {
   const data = normalizeVisitorInput(visitorData);
   const now = new Date().toISOString();
@@ -225,12 +196,6 @@ function escapeLikePattern(value) {
 class VisitorSqliteRepository {
   constructor(options = {}) {
     this.dbPath = options.dbPath || config.DB_FILE;
-    this.legacyFilePath = Object.prototype.hasOwnProperty.call(options, 'legacyFilePath')
-      ? options.legacyFilePath
-      : config.VISITORS_FILE;
-    this.legacyCompatMode = Object.prototype.hasOwnProperty.call(options, 'legacyCompatMode')
-      ? Boolean(options.legacyCompatMode)
-      : Boolean(config.VISITOR_JSON_COMPAT_MODE);
     this.db = openDatabase(this.dbPath, options.migrationsDir);
     this.upsertStatement = this.db.prepare(VISITOR_UPSERT_SQL);
     this.findAllStatement = this.db.prepare('SELECT * FROM visitors ORDER BY created_at ASC, id ASC');
@@ -257,116 +222,6 @@ class VisitorSqliteRepository {
       "SELECT COUNT(*) AS count FROM visitors WHERE substr(registered_at, 1, 10) = ?"
     );
     this.deleteAllStatement = this.db.prepare('DELETE FROM visitors');
-    this.lastLegacySyncMtime = 0;
-  }
-
-  async _ensureLegacyDirectory() {
-    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
-      return;
-    }
-
-    await fs.mkdir(path.dirname(this.legacyFilePath), { recursive: true });
-  }
-
-  async _getLegacySnapshotMtime() {
-    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
-      return 0;
-    }
-
-    try {
-      const stats = await fs.stat(this.legacyFilePath);
-      return stats.mtimeMs;
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        return 0;
-      }
-
-      throw error;
-    }
-  }
-
-  async _readLegacySnapshot() {
-    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
-      return [];
-    }
-
-    try {
-      const raw = await fs.readFile(this.legacyFilePath, 'utf8');
-      if (!raw.trim()) {
-        return [];
-      }
-
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        logger.warn('Legacy visitor snapshot is not an array', {
-          legacyFilePath: this.legacyFilePath
-        });
-        return [];
-      }
-
-      return parsed;
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        return [];
-      }
-
-      logger.warn('Failed to read legacy visitor snapshot', {
-        error: error.message,
-        legacyFilePath: this.legacyFilePath
-      });
-      return [];
-    }
-  }
-
-  async _writeLegacySnapshot(rows) {
-    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
-      return;
-    }
-
-    await this._ensureLegacyDirectory();
-    const payload = JSON.stringify(rows.map((row) => mapRowToLegacySnapshot(row)), null, 2);
-    await fs.writeFile(this.legacyFilePath, payload, 'utf8');
-    const stats = await fs.stat(this.legacyFilePath);
-    this.lastLegacySyncMtime = stats.mtimeMs;
-  }
-
-  async _syncFromLegacySnapshotIfNeeded() {
-    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
-      return;
-    }
-
-    const currentMtime = await this._getLegacySnapshotMtime();
-    if (currentMtime <= this.lastLegacySyncMtime) {
-      return;
-    }
-
-    const legacyRows = await this._readLegacySnapshot();
-    await this._replaceDatabaseRows(legacyRows);
-    this.lastLegacySyncMtime = currentMtime;
-  }
-
-  async _replaceDatabaseRows(legacyRows) {
-    this.db.exec('BEGIN IMMEDIATE');
-    try {
-      this.deleteAllStatement.run();
-
-      for (const row of legacyRows) {
-        const dbRow = buildDbRow(row, {});
-        this.upsertStatement.run(dbRow);
-      }
-
-      this.db.exec('COMMIT');
-    } catch (error) {
-      try {
-        this.db.exec('ROLLBACK');
-      } catch (rollbackError) {
-        logger.warn('Rollback failed while replacing visitor rows', {
-          error: rollbackError.message
-        });
-      }
-
-      throw error;
-    }
   }
 
   async _upsertRow(row) {
@@ -412,7 +267,6 @@ class VisitorSqliteRepository {
 
   async findAll() {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const rows = this.findAllStatement.all();
       return rows.map((row) => mapRowToVisitor(row));
     } catch (error) {
@@ -425,7 +279,6 @@ class VisitorSqliteRepository {
 
   async findById(id) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const row = this.findByIdStatement.get(id);
       return row ? mapRowToVisitor(row) : null;
     } catch (error) {
@@ -439,7 +292,6 @@ class VisitorSqliteRepository {
 
   async findByEmailPresent(email) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const row = this.findByEmailPresentStatement.get(email, 'checked_in');
       return row ? mapRowToVisitor(row) : null;
     } catch (error) {
@@ -453,7 +305,6 @@ class VisitorSqliteRepository {
 
   async findCurrentVisitors() {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const rows = this.findCurrentVisitorsStatement.all();
       return rows.map((row) => mapRowToVisitor(row));
     } catch (error) {
@@ -466,7 +317,6 @@ class VisitorSqliteRepository {
 
   async findByDateRange(startDate, endDate = new Date()) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const startIso = startDate instanceof Date ? startDate.toISOString() : new Date(startDate).toISOString();
       const endIso = endDate instanceof Date ? endDate.toISOString() : new Date(endDate).toISOString();
       const rows = this.findByDateRangeStatement.all(startIso, endIso);
@@ -483,7 +333,6 @@ class VisitorSqliteRepository {
 
   async findByRegisterNo(registerNo) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const normalized = String(registerNo || '').trim();
       if (!normalized) {
         return null;
@@ -502,7 +351,6 @@ class VisitorSqliteRepository {
 
   async findByQrToken(qrToken) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const normalized = String(qrToken || '').trim();
       if (!normalized) {
         return null;
@@ -521,7 +369,6 @@ class VisitorSqliteRepository {
 
   async findByPinCode(pinCode) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const normalized = String(pinCode || '').trim();
       if (!normalized) {
         return null;
@@ -540,7 +387,6 @@ class VisitorSqliteRepository {
 
   async findRegistrationById(id) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const normalized = String(id || '').trim();
       if (!normalized) {
         return null;
@@ -559,7 +405,6 @@ class VisitorSqliteRepository {
 
   async searchRegistrations(filters = {}) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
 
       const whereClauses = [];
       const params = [];
@@ -641,7 +486,6 @@ class VisitorSqliteRepository {
 
   async getReceptionSnapshot(date = new Date()) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const dateKey = normalizeDateOnly(date) || new Date().toISOString().slice(0, 10);
       const pending = this._queryRegistrationRows(
         ['scheduled_date = ?', "status IN ('registered')"],
@@ -682,7 +526,6 @@ class VisitorSqliteRepository {
 
   async markRegistrationCheckedIn(id, options = {}) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const currentRow = this.findByIdStatement.get(id);
       if (!currentRow) {
         throw new AppError('Registration not found', 404);
@@ -716,7 +559,6 @@ class VisitorSqliteRepository {
       }, currentRow);
 
       await this._upsertRow(mergedRow);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_checkin_reception', {
         visitorId: mergedRow.id,
@@ -740,7 +582,6 @@ class VisitorSqliteRepository {
 
   async markRegistrationCheckedOut(id, options = {}) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const currentRow = this.findByIdStatement.get(id);
       if (!currentRow) {
         throw new AppError('Registration not found', 404);
@@ -768,7 +609,6 @@ class VisitorSqliteRepository {
       }, currentRow);
 
       await this._upsertRow(mergedRow);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_checkout_reception', {
         visitorId: mergedRow.id,
@@ -791,7 +631,6 @@ class VisitorSqliteRepository {
 
   async markRegistrationVoided(id, options = {}) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const currentRow = this.findByIdStatement.get(id);
       if (!currentRow) {
         throw new AppError('Registration not found', 404);
@@ -815,7 +654,6 @@ class VisitorSqliteRepository {
       }, currentRow);
 
       await this._upsertRow(mergedRow);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_voided', {
         visitorId: mergedRow.id,
@@ -839,11 +677,13 @@ class VisitorSqliteRepository {
 
   async createRegistration(registrationData, options = {}) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const data = normalizeVisitorInput(registrationData);
       const now = options.now || new Date().toISOString();
       const registeredAt = data.registered_at || now;
       const dateKey = normalizeDateOnly(registeredAt) || registeredAt.slice(0, 10);
+      const isReceptionCheckIn = String(data.source || 'web') === 'reception';
+      const registrationStatus = isReceptionCheckIn ? 'checked_in' : 'registered';
+      const checkedInAt = isReceptionCheckIn ? registeredAt : null;
       let row = null;
       this.db.exec('BEGIN IMMEDIATE');
       try {
@@ -854,26 +694,26 @@ class VisitorSqliteRepository {
           ...data,
           register_no: registerNo,
           registered_at: registeredAt,
-          checked_in_at: null,
+          checked_in_at: checkedInAt,
           checked_out_at: null,
-          status: 'registered',
+          status: registrationStatus,
           source: data.source || 'web',
-          heureArrivee: null,
+          heureArrivee: checkedInAt,
           heureSortie: null,
-          statut: 'registered',
+          statut: isReceptionCheckIn ? 'present' : 'registered',
           created_at: data.created_at || registeredAt,
           updated_at: data.updated_at || now
         });
 
         row.register_no = registerNo;
         row.registered_at = registeredAt;
-        row.checked_in_at = null;
+        row.checked_in_at = checkedInAt;
         row.checked_out_at = null;
-        row.status = 'registered';
+        row.status = registrationStatus;
         row.source = data.source || 'web';
-        row.heureArrivee = null;
+        row.heureArrivee = checkedInAt;
         row.heureSortie = null;
-        row.statut = 'registered';
+        row.statut = isReceptionCheckIn ? 'present' : 'registered';
 
         this.upsertStatement.run(row);
         this.db.exec('COMMIT');
@@ -888,8 +728,6 @@ class VisitorSqliteRepository {
 
         throw error;
       }
-
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_registered', {
         registerNo: row.register_no,
@@ -909,11 +747,9 @@ class VisitorSqliteRepository {
 
   async create(visitorData) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const visitor = visitorData instanceof Visitor ? visitorData : new Visitor(visitorData);
       const row = buildDbRow(visitor, {});
       await this._upsertRow(row);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_checkin', {
         visitorId: row.id,
@@ -933,20 +769,18 @@ class VisitorSqliteRepository {
 
   async update(id, updates) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const currentRow = this.findByIdStatement.get(id);
       if (!currentRow) {
         throw new Error('Visiteur non trouvé');
       }
 
-      const mergedLegacy = {
+      const mergedVisitor = {
         ...mapRowToVisitor(currentRow).toJSON(),
         ...normalizeVisitorInput(updates),
         id
       };
-      const mergedRow = buildDbRow(mergedLegacy, currentRow);
+      const mergedRow = buildDbRow(mergedVisitor, currentRow);
       await this._upsertRow(mergedRow);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_update', {
         visitorId: id,
@@ -966,7 +800,6 @@ class VisitorSqliteRepository {
 
   async checkOut(email) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const currentRow = this.findByEmailPresentStatement.get(email, 'checked_in');
       if (!currentRow) {
         throw new AppError('Aucune arrivée en cours trouvée pour cet email', 404);
@@ -986,7 +819,6 @@ class VisitorSqliteRepository {
       );
 
       await this._upsertRow(mergedRow);
-      await this._writeLegacySnapshot(await this._getAllRows());
 
       logger.logUserAction('visitor_checkout', {
         visitorId: mergedRow.id,
@@ -1006,7 +838,6 @@ class VisitorSqliteRepository {
   async deleteAll() {
     try {
       this.deleteAllStatement.run();
-      await this._writeLegacySnapshot([]);
       logger.logUserAction('visitors_clear_all', {});
       return true;
     } catch (error) {
@@ -1019,7 +850,6 @@ class VisitorSqliteRepository {
 
   async anonymizeOldVisitors(anonymizationDays = config.ANONYMIZATION_DAYS) {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const rows = this._getAllRowsSync();
       let anonymizedCount = 0;
 
@@ -1034,7 +864,6 @@ class VisitorSqliteRepository {
       }
 
       if (anonymizedCount > 0) {
-        await this._writeLegacySnapshot(await this._getAllRows());
         logger.logUserAction('visitors_anonymized', {
           anonymizedCount,
           anonymizationDays
@@ -1052,7 +881,6 @@ class VisitorSqliteRepository {
 
   async getStatistics() {
     try {
-      await this._syncFromLegacySnapshotIfNeeded();
       const visitors = await this.findAll();
       const now = new Date();
 
@@ -1103,3 +931,4 @@ class VisitorSqliteRepository {
 }
 
 module.exports = VisitorSqliteRepository;
+

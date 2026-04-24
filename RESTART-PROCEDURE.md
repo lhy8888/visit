@@ -22,9 +22,8 @@ curl http://localhost:3001/health
 ## Useful notes
 
 - The app uses `data/visitor.db` for SQLite storage
-- `visitors.json` is backup-only by default and does not stay mirrored unless `VISITOR_JSON_COMPAT_MODE=1`
 - If you changed environment variables or migration files, restart the app after the change
-- If you imported old JSON data, rerun `npm run migrate:json-to-sqlite` only once unless you want to import again
+- There is no JSON mirror or import step in the normal runtime
 
 ## Common issues
 

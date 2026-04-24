@@ -1,64 +1,20 @@
-# Migration Guide
+# Migration Notes
 
-This guide explains the move from the old JSON-based visitor store to the new SQLite-backed system.
+The app now uses SQLite as the only live datastore.
 
 ## What changed
 
-- Main storage moved from `data/visitors.json` to `data/visitor.db`
-- Public registration now creates a pre-registration instead of immediate arrival
+- Main storage is `data/visitor.db`
+- Public registration creates a pre-registration
 - Reception check-in uses PIN, register number, or QR
-- Admin auth now uses session cookies
-- Public and admin settings now read from SQLite `app_settings`
-- Legacy JSON routes only remain for compatibility and tests
-- JSON is not mirrored by default; only enable `VISITOR_JSON_COMPAT_MODE=1` if you need temporary compatibility during a migration
+- Admin auth uses session cookies
+- Public and admin settings read from SQLite `app_settings`
 
-## Migration steps
+## Legacy routes
 
-1. Back up your existing data directory.
-2. Make sure dependencies are installed:
-   ```bash
-   npm install
-   ```
-3. Import the old JSON snapshot:
-   ```bash
-   npm run migrate:json-to-sqlite
-   ```
-4. Restart the app:
-   ```bash
-   npm start
-   ```
+Some old routes may still exist behind deprecation handling for backward compatibility, but the supported paths are the new SQLite-backed ones.
 
-## What the migration script does
-
-- Reads `data/visitors.json`
-- Creates or opens `data/visitor.db`
-- Inserts the legacy visitor records into SQLite
-- Leaves the old JSON file untouched as a backup snapshot
-
-The normal runtime does not keep `visitors.json` in sync with SQLite unless `VISITOR_JSON_COMPAT_MODE=1` is set.
-
-## Legacy compatibility
-
-The following old routes are kept for compatibility and tests, but they are deprecated:
-
-- `POST /api/check-in`
-- `POST /api/check-out`
-- `GET /api/admin/stats`
-- `GET /api/admin/visitors/current`
-- `GET /api/admin/visitors/history`
-- `POST /api/admin/clear-visitors`
-- `POST /api/admin/generate-test-visitors`
-- `POST /api/admin/anonymize`
-- `GET /api/admin/config`
-- `PUT /api/admin/config`
-- `POST /api/admin/change-pin`
-- `PUT /api/admin/logo`
-- `GET /api/admin/security`
-
-The legacy admin config routes require an admin session. The old PIN-only admin login is removed; use `POST /api/admin/login` with username and password.
-The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`.
-
-## New primary routes
+## Primary routes
 
 - `POST /api/registrations`
 - `GET /api/registrations/:registerNo`
@@ -69,7 +25,8 @@ The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`
 - `GET /api/admin/dashboard/today`
 - `GET /api/admin/visitors`
 - `GET /api/admin/stats/summary`
-- `GET /api/admin/export.csv`
+- `GET /api/admin/export.xlsx`
+- `GET /api/admin/export.xlsx`
 - `GET /api/admin/settings`
 - `PUT /api/admin/settings`
 
@@ -81,4 +38,4 @@ The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`
 
 ## Rollback
 
-If you need to roll back, keep the old `data/visitors.json` backup and point the app back to it only for archival or inspection. The new code path expects SQLite.
+If you need to roll back application code, restore the previous commit. The live data store remains SQLite.

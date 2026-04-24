@@ -6,7 +6,6 @@ const VisitorRepository = require('../src/repositories/VisitorRepository');
 describe('SQLite VisitorRepository', () => {
   const testDir = path.join(__dirname, 'sqlite-test-data');
   let dbPath;
-  let legacyPath;
   let repository;
 
   beforeAll(async () => {
@@ -24,25 +23,14 @@ describe('SQLite VisitorRepository', () => {
   afterEach(async () => {
     if (dbPath) {
       closeDatabase(dbPath);
-    }
-
-    if (dbPath) {
       await fs.rm(dbPath, { force: true }).catch(() => {});
-    }
-
-    if (legacyPath) {
-      await fs.rm(legacyPath, { force: true }).catch(() => {});
     }
   });
 
   test('uses SQLite only by default', async () => {
     dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
-    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
 
-    repository = new VisitorRepository({
-      dbPath,
-      legacyFilePath: legacyPath
-    });
+    repository = new VisitorRepository({ dbPath });
 
     const created = await repository.create({
       nom: 'Martin',
@@ -59,8 +47,6 @@ describe('SQLite VisitorRepository', () => {
     const visitors = await repository.findAll();
     expect(visitors).toHaveLength(1);
     expect(visitors[0].email).toBe('jean.martin@example.com');
-
-    await expect(fs.access(legacyPath)).rejects.toHaveProperty('code', 'ENOENT');
   });
 
   test('creates the admin_sessions table during SQLite bootstrap', async () => {
@@ -80,66 +66,9 @@ describe('SQLite VisitorRepository', () => {
     expect(table.name).toBe('admin_sessions');
   });
 
-  test('can mirror and resync legacy JSON only in explicit compat mode', async () => {
-    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
-    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
-
-    repository = new VisitorRepository({
-      dbPath,
-      legacyFilePath: legacyPath,
-      legacyCompatMode: true
-    });
-
-    const created = await repository.create({
-      nom: 'Legacy',
-      prenom: 'User',
-      societe: 'Old Corp',
-      email: 'legacy@example.com',
-      telephone: '0102030405',
-      personneVisitee: 'Front Desk'
-    });
-
-    expect(created.id).toBeTruthy();
-
-    const firstSnapshot = JSON.parse(await fs.readFile(legacyPath, 'utf8'));
-    expect(firstSnapshot).toHaveLength(1);
-    expect(firstSnapshot[0].nom).toBe('Legacy');
-
-    await fs.writeFile(legacyPath, JSON.stringify([
-      ...firstSnapshot,
-      {
-        id: 'legacy-2',
-        nom: 'Imported',
-        prenom: 'Guest',
-        societe: 'Compat Corp',
-        email: 'imported@example.com',
-        telephone: '0203040506',
-        personneVisitee: 'Lobby',
-        heureArrivee: '2025-04-23T09:00:00.000Z',
-        heureSortie: null
-      }
-    ], null, 2), 'utf8');
-
-    closeDatabase(dbPath);
-    repository = new VisitorRepository({
-      dbPath,
-      legacyFilePath: legacyPath,
-      legacyCompatMode: true
-    });
-
-    const visitors = await repository.findAll();
-    expect(visitors).toHaveLength(2);
-    expect(visitors.find((visitor) => visitor.email === 'imported@example.com')).toBeTruthy();
-  });
-
   test('updates and checks out a visitor in SQLite', async () => {
     dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
-    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
-
-    repository = new VisitorRepository({
-      dbPath,
-      legacyFilePath: legacyPath
-    });
+    repository = new VisitorRepository({ dbPath });
 
     const created = await repository.create({
       nom: 'Smith',
@@ -163,12 +92,7 @@ describe('SQLite VisitorRepository', () => {
 
   test('deletes all visitors from SQLite', async () => {
     dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
-    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
-
-    repository = new VisitorRepository({
-      dbPath,
-      legacyFilePath: legacyPath
-    });
+    repository = new VisitorRepository({ dbPath });
 
     await repository.create({
       nom: 'One',

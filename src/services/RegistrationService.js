@@ -37,6 +37,7 @@ class RegistrationService {
   }
 
   _normalizeInput(data = {}) {
+    const source = data.source === 'reception' ? 'reception' : 'web';
     return {
       visitorName: combineVisitorName(data),
       company: toNullableString(data.company || data.societe),
@@ -44,9 +45,11 @@ class RegistrationService {
       phone: toNullableString(data.phone || data.telephone),
       hostName: toNullableString(data.host_name || data.hostName || data.personneVisitee),
       visitPurpose: toNullableString(data.visit_purpose || data.visitPurpose),
-      scheduledDate: normalizeDateOnly(data.scheduled_date || data.scheduledDate || data.date),
+      scheduledDate: normalizeDateOnly(
+        data.scheduled_date || data.scheduledDate || data.date || (source === 'reception' ? new Date() : null)
+      ),
       notes: toNullableString(data.notes),
-      source: data.source === 'reception' ? 'reception' : 'web'
+      source
     };
   }
 

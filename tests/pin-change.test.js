@@ -5,8 +5,6 @@ const fs = require('fs').promises;
 process.env.NODE_ENV = 'test';
 const testDataDir = path.join(__dirname, 'pin-change-test-data');
 process.env.DATA_DIR = testDataDir;
-process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
-process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
 const { closeDatabase } = require('../src/db/sqlite');

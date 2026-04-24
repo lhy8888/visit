@@ -32,54 +32,54 @@ const errorHandler = (err, req, res, next) => {
 
   // Erreur de JSON malformé
   if (err.type === 'entity.parse.failed') {
-    error = new AppError('Données JSON invalides', 400);
+    error = new AppError('Invalid JSON payload', 400);
   }
 
-  // Erreur de fichier non trouvé
+  // File not found
   if (err.code === 'ENOENT') {
-    error = new AppError('Fichier non trouvé', 404);
+    error = new AppError('File not found', 404);
   }
 
-  // Erreur de permission
+  // Permission error
   if (err.code === 'EACCES') {
-    error = new AppError('Permissions insuffisantes', 403);
+    error = new AppError('Insufficient permissions', 403);
   }
 
-  // Erreur de multer (upload)
+  // Multer upload error
   if (err.code === 'LIMIT_FILE_SIZE') {
-    error = new AppError('Fichier trop volumineux', 400);
+    error = new AppError('File too large', 400);
   }
 
-  // Erreur d'authentification
+  // Authentication error
   if (err.name === 'UnauthorizedError') {
-    error = new AppError('Non autorisé', 401);
+    error = new AppError('Unauthorized', 401);
   }
 
-  // Erreur par défaut
+  // Default error
   if (!error.statusCode) {
-    error = new AppError('Erreur interne du serveur', 500);
+    error = new AppError('Internal server error', 500);
   }
 
-  // Réponse d'erreur
+  // Error response
   res.status(error.statusCode || 500).json({
     success: false,
     error: {
-      message: error.message || 'Erreur interne du serveur',
+      message: error.message || 'Internal server error',
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     }
   });
 };
 
 /**
- * Middleware pour les routes non trouvées
+ * Middleware for missing routes
  */
 const notFoundHandler = (req, res, next) => {
-  const error = new AppError(`Route non trouvée: ${req.originalUrl}`, 404);
+  const error = new AppError(`Route not found: ${req.originalUrl}`, 404);
   next(error);
 };
 
 /**
- * Wrapper pour les fonctions async
+ * Wrapper for async functions
  */
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);

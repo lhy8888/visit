@@ -11,8 +11,6 @@
     "dev": "nodemon server.js",
     "preinit": "node scripts/check-runtime.js",
     "init": "node scripts/init.js",
-    "premigrate:json-to-sqlite": "node scripts/check-runtime.js",
-    "migrate:json-to-sqlite": "node scripts/migrate-json-to-sqlite.js",
     "postinstall": "npm run init",
     "pretest": "node scripts/check-runtime.js",
     "test": "jest",
@@ -29,13 +27,13 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^4.19.2",
-    "express-rate-limit": "^8.0.0",
     "helmet": "^8.1.0",
     "joi": "^17.13.3",
     "multer": "^2.0.1",
     "qrcode": "^1.5.4",
     "uuid": "^9.0.1",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "jest": "^30.0.4",

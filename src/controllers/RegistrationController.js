@@ -8,10 +8,13 @@ class RegistrationController {
 
   createRegistration = asyncHandler(async (req, res) => {
     const registration = await this.registrationService.createRegistration(req.body);
+    const isReceptionCheckIn = registration.source === 'reception';
 
     res.status(201).json({
       success: true,
-      message: 'Registration created successfully',
+      message: isReceptionCheckIn
+        ? 'Visitor checked in successfully'
+        : 'Registration created successfully',
       data: registration
     });
   });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Reception - Visitor Register</title>
+  <title>Reception - Visitor Access</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="page-shell reception-page">
@@ -12,16 +12,11 @@
       <div class="brand">
         <img id="site-logo" class="brand-logo" src="/images/logo.png" alt="Company logo" hidden>
         <div>
-          <p class="eyebrow">Reception</p>
-          <h1 id="page-title">Visitor kiosk</h1>
+          <p class="eyebrow">Reception iPad</p>
+          <h1 id="page-title">Visitor Access</h1>
         </div>
       </div>
-
-      <div class="mode-switch kiosk-switch" role="tablist" aria-label="Visitor flow">
-        <button id="checkin-mode-button" class="mode-button active" type="button" data-kiosk-mode="checkin" aria-pressed="true">Check in</button>
-        <button id="register-mode-button" class="mode-button" type="button" data-kiosk-mode="register" aria-pressed="false">Direct registration</button>
-      </div>
-
+      <p class="lead">Use a PIN or scan a QR code to check in. Walk-in visitors can register on the spot below.</p>
       <p id="status-message" class="status" aria-live="polite"></p>
     </section>
 
@@ -29,35 +24,31 @@
       <article id="checkin-panel" class="card checkin-panel">
         <div class="panel-head">
           <p class="eyebrow">Check-in</p>
-          <h2>Choose PIN input or camera scan</h2>
-        </div>
-
-        <div class="mode-switch checkin-switch" role="tablist" aria-label="Check-in method">
-          <button id="pin-mode-button" class="mode-button active" type="button" data-checkin-mode="pin" aria-pressed="true">PIN input</button>
-          <button id="camera-mode-button" class="mode-button" type="button" data-checkin-mode="camera" aria-pressed="false">Camera scan</button>
+          <h2>Check in by PIN or QR</h2>
+          <p class="helper compact">Enter a PIN above or scan a QR code below. The camera stays open on this iPad.</p>
         </div>
 
         <article id="pin-panel" class="inner-panel">
           <form id="lookup-form" class="lookup-form" novalidate>
-            <input id="identifier-input" name="identifier" type="text" autocomplete="off" placeholder="PIN, register number or QR token">
+            <input id="identifier-input" name="identifier" type="text" autocomplete="off" placeholder="Enter PIN or register number">
             <button id="lookup-button" type="submit">Check in</button>
           </form>
         </article>
 
-        <article id="camera-panel" class="inner-panel hidden">
-          <video id="scanner-video" class="scanner-video" autoplay muted playsinline hidden></video>
-
-          <div class="toolbar">
-            <button id="start-scan-button" class="secondary" type="button">Start camera scan</button>
-            <button id="stop-scan-button" class="secondary" type="button" hidden>Stop scan</button>
+        <article id="camera-panel" class="inner-panel">
+          <div class="camera-head">
+            <span class="pill blue">Camera live</span>
+            <p class="helper compact">The camera is kept open for QR check-ins. If camera access is blocked, PIN entry still works.</p>
           </div>
+          <video id="scanner-video" class="scanner-video" autoplay muted playsinline></video>
         </article>
       </article>
 
-      <article id="register-panel" class="card checkin-panel hidden">
+      <article id="register-panel" class="card checkin-panel">
         <div class="panel-head">
-          <p class="eyebrow">Direct registration</p>
-          <h2>Register a visitor without a prior booking</h2>
+          <p class="eyebrow">Walk-in registration</p>
+          <h2>Register a visitor on the spot</h2>
+          <p class="helper compact">The current time is recorded automatically when you submit.</p>
         </div>
 
         <form id="registration-form" class="form-grid register-form" novalidate>
@@ -86,11 +77,6 @@
             <input id="host_name" name="host_name" type="text" required placeholder="John Smith">
           </div>
 
-          <div class="field">
-            <label for="scheduled_date">Visit date</label>
-            <input id="scheduled_date" name="scheduled_date" type="date" required>
-          </div>
-
           <div class="field full">
             <label for="visit_purpose">Visit purpose</label>
             <textarea id="visit_purpose" name="visit_purpose" placeholder="Meeting, delivery, interview, etc."></textarea>
@@ -101,7 +87,7 @@
           </div>
         </form>
 
-        <p class="helper">We will generate a register number, a PIN and a QR code after submission.</p>
+        <p class="helper">Submit to check the visitor in immediately.</p>
         <p id="registration-status" class="status" aria-live="polite"></p>
       </article>
     </section>

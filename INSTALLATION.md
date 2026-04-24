@@ -36,22 +36,13 @@ Open:
 
 Change this password after the first login.
 
-## Optional migration from legacy JSON
-
-If you already have old visitor data in `data/visitors.json`, import it into SQLite:
-
-```bash
-npm run migrate:json-to-sqlite
-```
-
 ## Useful commands
 
 - `npm test` - run the full test suite
 - `npm run init` - re-run app initialization
-- `npm run migrate:json-to-sqlite` - import legacy JSON data into SQLite
 
 ## Notes
 
 - The app stores its main data in `data/visitor.db`
-- `data/visitors.json` is migration/backup only unless `VISITOR_JSON_COMPAT_MODE=1`
+- There is no JSON runtime store; SQLite is the only live datastore
 - No external database server or Docker setup is required

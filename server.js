@@ -9,7 +9,6 @@ const logger = require('./src/utils/logger');
 const {
   cors,
   helmet,
-  limiter,
   sanitizeInput,
   requestLogger,
   validateHeaders
@@ -35,7 +34,6 @@ const app = express();
  */
 app.use(helmet);
 app.use(cors);
-app.use(limiter);
 app.use(requestLogger);
 
 /**
@@ -130,7 +128,7 @@ app.get('/api', (req, res) => {
         'GET /api/admin/dashboard/today': 'Today dashboard',
         'GET /api/admin/visitors': 'List visitors with filters',
         'GET /api/admin/stats/summary': 'Statistics summary',
-        'GET /api/admin/export.csv': 'Export visitors as CSV',
+        'GET /api/admin/export.xlsx': 'Export visitors as Excel',
         'PATCH /api/admin/visitors/:id/void': 'Void a visitor record',
         'GET /api/admin/settings': 'Get admin settings',
         'PUT /api/admin/settings': 'Update admin settings'

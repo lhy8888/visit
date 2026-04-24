@@ -1,28 +1,22 @@
 const lookupForm = document.getElementById('lookup-form');
 const identifierInput = document.getElementById('identifier-input');
 const lookupButton = document.getElementById('lookup-button');
-const startScanButton = document.getElementById('start-scan-button');
-const stopScanButton = document.getElementById('stop-scan-button');
 const registrationForm = document.getElementById('registration-form');
 const registrationStatus = document.getElementById('registration-status');
 const registrationSubmitButton = document.getElementById('registration-submit-button');
-const scheduledDateInput = document.getElementById('scheduled_date');
 const statusMessage = document.getElementById('status-message');
 const scannerVideo = document.getElementById('scanner-video');
-const checkinPanel = document.getElementById('checkin-panel');
-const pinPanel = document.getElementById('pin-panel');
-const cameraPanel = document.getElementById('camera-panel');
-const registerPanel = document.getElementById('register-panel');
-const kioskModeButtons = Array.from(document.querySelectorAll('[data-kiosk-mode]'));
-const checkinModeButtons = Array.from(document.querySelectorAll('[data-checkin-mode]'));
+const siteLogo = document.getElementById('site-logo');
+
+const SCAN_COOLDOWN_MS = 3500;
 
 const state = {
   scannerStream: null,
   scannerDetector: null,
   scanning: false,
   scanFrameHandle: null,
-  kioskMode: 'checkin',
-  checkinMode: 'pin'
+  lastScanToken: '',
+  scanPausedUntil: 0
 };
 
 function setStatus(message, isError = false) {
@@ -30,8 +24,17 @@ function setStatus(message, isError = false) {
     return;
   }
 
-  statusMessage.textContent = message;
+  statusMessage.textContent = message || '';
   statusMessage.classList.toggle('error', Boolean(isError));
+}
+
+function setRegistrationStatus(message, isError = false) {
+  if (!registrationStatus) {
+    return;
+  }
+
+  registrationStatus.textContent = message || '';
+  registrationStatus.classList.toggle('error', Boolean(isError));
 }
 
 function setButtonLoading(button, isLoading, label) {
@@ -45,29 +48,8 @@ function setButtonLoading(button, isLoading, label) {
   }
 }
 
-function setRegistrationStatus(message, isError = false) {
-  if (!registrationStatus) {
-    return;
-  }
-
-  registrationStatus.textContent = message;
-  registrationStatus.classList.toggle('error', Boolean(isError));
-}
-
 function getTodayDateKey() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function setDefaultRegistrationDate() {
-  if (!scheduledDateInput) {
-    return;
-  }
-
-  const today = getTodayDateKey();
-  scheduledDateInput.min = today;
-  if (!scheduledDateInput.value) {
-    scheduledDateInput.value = today;
-  }
 }
 
 async function apiJson(url, options = {}) {
@@ -87,73 +69,25 @@ async function apiJson(url, options = {}) {
   return payload;
 }
 
-function setCheckinMode(mode) {
-  state.checkinMode = mode;
-
-  checkinModeButtons.forEach((button) => {
-    const active = button.dataset.checkinMode === mode;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-
-  if (pinPanel) {
-    pinPanel.classList.toggle('hidden', mode !== 'pin');
-  }
-
-  if (cameraPanel) {
-    cameraPanel.classList.toggle('hidden', mode !== 'camera');
-  }
-
-  if (mode !== 'camera') {
-    stopScanner(false);
-  }
-
-  if (mode === 'pin' && identifierInput) {
-    identifierInput.focus();
-  }
-
-  if (mode !== 'pin' && identifierInput) {
-    identifierInput.blur();
-  }
-
-  setStatus('');
-}
-
-function setKioskMode(mode) {
-  state.kioskMode = mode;
-
-  kioskModeButtons.forEach((button) => {
-    const active = button.dataset.kioskMode === mode;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-
-  if (checkinPanel) {
-    checkinPanel.classList.toggle('hidden', mode !== 'checkin');
-  }
-
-  if (registerPanel) {
-    registerPanel.classList.toggle('hidden', mode !== 'register');
-  }
-
-  if (mode === 'checkin') {
-    setRegistrationStatus('');
-    setCheckinMode(state.checkinMode || 'pin');
-  } else {
-    stopScanner(false);
-    setStatus('');
-    if (identifierInput) {
-      identifierInput.blur();
+async function loadPublicConfig() {
+  try {
+    const response = await fetch('/api/public/config');
+    if (!response.ok) {
+      return;
     }
-    if (scheduledDateInput) {
-      scheduledDateInput.blur();
+
+    const payload = await response.json();
+    const config = payload && payload.data ? payload.data : {};
+
+    if (config.logoPath && siteLogo) {
+      siteLogo.hidden = false;
+      siteLogo.src = config.logoPath;
+      siteLogo.onerror = () => {
+        siteLogo.hidden = true;
+      };
     }
-    if (registrationForm) {
-      const firstField = registrationForm.querySelector('#visitor_name');
-      if (firstField && typeof firstField.focus === 'function') {
-        firstField.focus();
-      }
-    }
+  } catch (error) {
+    setStatus('Could not load the public configuration.', true);
   }
 }
 
@@ -220,14 +154,6 @@ function stopScanner(showMessage = false) {
     scannerVideo.hidden = true;
   }
 
-  if (startScanButton) {
-    startScanButton.hidden = false;
-  }
-
-  if (stopScanButton) {
-    stopScanButton.hidden = true;
-  }
-
   if (showMessage) {
     setStatus('Camera scan stopped.');
   }
@@ -243,10 +169,12 @@ async function scanLoop() {
       const codes = await state.scannerDetector.detect(scannerVideo);
       if (codes && codes.length > 0 && codes[0].rawValue) {
         const token = String(codes[0].rawValue).trim();
-        if (token) {
-          stopScanner(false);
+        const now = Date.now();
+        if (token && (token !== state.lastScanToken || now >= state.scanPausedUntil)) {
+          state.lastScanToken = token;
+          state.scanPausedUntil = now + SCAN_COOLDOWN_MS;
+          setStatus('QR detected. Checking in...');
           await submitQrCheckIn(token);
-          return;
         }
       }
     }
@@ -259,6 +187,10 @@ async function scanLoop() {
 
 async function startScanner() {
   try {
+    if (state.scanning && state.scannerStream) {
+      return;
+    }
+
     if (!('BarcodeDetector' in window)) {
       throw new Error('This browser does not support built-in QR scanning.');
     }
@@ -283,18 +215,19 @@ async function startScanner() {
 
     state.scanning = true;
 
-    if (startScanButton) {
-      startScanButton.hidden = true;
-    }
-
-    if (stopScanButton) {
-      stopScanButton.hidden = false;
-    }
-
+    setStatus('Camera is active.');
     scanLoop();
   } catch (error) {
     stopScanner(false);
-    setStatus(error.message || 'Could not start the camera scanner.', true);
+    const message = error?.message || '';
+    const neutralFallback = message.includes('does not support built-in QR scanning')
+      || message.includes('Camera access is not available');
+    setStatus(
+      neutralFallback
+        ? 'Camera scanning is available on supported devices. PIN entry still works.'
+        : message || 'Could not start the camera scanner.',
+      !neutralFallback
+    );
   }
 }
 
@@ -323,7 +256,8 @@ async function handleRegistrationSubmit(event) {
       phone: formData.get('phone'),
       host_name: formData.get('host_name'),
       visit_purpose: formData.get('visit_purpose'),
-      scheduled_date: formData.get('scheduled_date')
+      scheduled_date: getTodayDateKey(),
+      source: 'reception'
     };
 
     const response = await apiJson('/api/registrations', {
@@ -331,12 +265,16 @@ async function handleRegistrationSubmit(event) {
       body: JSON.stringify(payload)
     });
 
-    const resultUrl = response?.data?.resultUrl || `/result/${encodeURIComponent(response?.data?.registerNo || '')}`;
-    if (!resultUrl || resultUrl.endsWith('/result/')) {
-      throw new Error('Registration created but result page could not be resolved.');
+    if (!response?.success) {
+      throw new Error('Registration created but the server did not confirm check-in.');
     }
 
-    window.location.assign(resultUrl);
+    registrationForm.reset();
+    setRegistrationStatus(response?.message || 'Visitor checked in successfully.');
+    if (identifierInput) {
+      identifierInput.value = '';
+      identifierInput.focus();
+    }
   } catch (error) {
     setRegistrationStatus(error.message || 'Registration failed', true);
   } finally {
@@ -348,26 +286,11 @@ if (lookupForm) {
   lookupForm.addEventListener('submit', handleLookupSubmit);
 }
 
-if (startScanButton) {
-  startScanButton.addEventListener('click', startScanner);
-}
-
-if (stopScanButton) {
-  stopScanButton.addEventListener('click', () => stopScanner(false));
-}
-
-kioskModeButtons.forEach((button) => {
-  button.addEventListener('click', () => setKioskMode(button.dataset.kioskMode || 'checkin'));
-});
-
-checkinModeButtons.forEach((button) => {
-  button.addEventListener('click', () => setCheckinMode(button.dataset.checkinMode || 'pin'));
-});
-
 if (registrationForm) {
   registrationForm.addEventListener('submit', handleRegistrationSubmit);
 }
 
-setDefaultRegistrationDate();
-setKioskMode('checkin');
-setCheckinMode('pin');
+window.addEventListener('beforeunload', () => stopScanner(false));
+
+loadPublicConfig();
+startScanner();

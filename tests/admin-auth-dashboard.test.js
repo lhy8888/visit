@@ -6,8 +6,6 @@ process.env.NODE_ENV = 'test';
 
 const testDataDir = path.join(__dirname, 'admin-test-data');
 process.env.DATA_DIR = testDataDir;
-process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
-process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
 const VisitorRepository = require('../src/repositories/VisitorRepository');
@@ -26,8 +24,7 @@ describe('Admin authentication and dashboard', () => {
 
   beforeEach(async () => {
     visitorRepo = new VisitorRepository({
-      dbPath: process.env.DB_FILE,
-      legacyFilePath: null
+      dbPath: process.env.DB_FILE
     });
     await visitorRepo.deleteAll();
   });
@@ -71,7 +68,7 @@ describe('Admin authentication and dashboard', () => {
       .get('/api/admin/dashboard/today')
       .expect(401);
 
-    expect(response.body.error.message).toBe('Session administrateur requise');
+    expect(response.body.error.message).toBe('Admin session required');
   });
 
   test('logs in with username and password and exposes the session', async () => {
@@ -127,12 +124,12 @@ describe('Admin authentication and dashboard', () => {
     expect(historyResponse.body.data[0].registerNo).toBe(checkedInVisitor.registerNo);
 
     const exportResponse = await agent
-      .get('/api/admin/export.csv?status=checked_in')
+      .get('/api/admin/export.xlsx?status=checked_in')
       .expect(200);
 
-    expect(exportResponse.headers['content-type']).toContain('text/csv');
-    expect(exportResponse.text).toContain('Register No');
-    expect(exportResponse.text).toContain(checkedInVisitor.registerNo);
+    expect(exportResponse.headers['content-type']).toContain('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(exportResponse.headers['content-disposition']).toContain('.xlsx');
+    expect(Number(exportResponse.headers['content-length'] || 0)).toBeGreaterThan(0);
 
     await agent
       .patch(`/api/admin/visitors/${encodeURIComponent(futureVisitor.id)}/void`)

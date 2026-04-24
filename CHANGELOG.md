@@ -126,7 +126,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Structure modulaire** avec séparation claire des responsabilités
 - **API RESTful** avec endpoints documentés
 - **Gestion d'état** côté client avec localStorage
-- **Configuration centralisée** dans config.json
+- **Configuration centralisée** dans SQLite `app_settings`
 - **Logging** pour debugging et monitoring
 
 #### Performance

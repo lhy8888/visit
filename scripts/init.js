@@ -2,7 +2,7 @@
 
 /**
  * Initial setup script for the visitor management app.
- * Creates folders, copies sample JSON files, and primes SQLite.
+ * Creates folders and primes SQLite.
  */
 
 const fs = require('fs');
@@ -19,11 +19,6 @@ const dataDir = path.join(__dirname, '..', 'data');
 const logsDir = path.join(__dirname, '..', 'logs');
 const imagesDir = path.join(__dirname, '..', 'public', 'images');
 
-const configFile = path.join(dataDir, 'config.json');
-const visitorsFile = path.join(dataDir, 'visitors.json');
-const configExample = path.join(dataDir, 'config.example.json');
-const visitorsExample = path.join(dataDir, 'visitors.example.json');
-
 function ensureDirectoryExists(dirPath, description) {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -31,21 +26,6 @@ function ensureDirectoryExists(dirPath, description) {
   } else {
     console.log(`Folder already exists: ${description} (${dirPath})`);
   }
-}
-
-function copyExampleFile(examplePath, targetPath, description) {
-  if (fs.existsSync(targetPath)) {
-    console.log(`File already exists: ${description} (${path.basename(targetPath)})`);
-    return;
-  }
-
-  if (fs.existsSync(examplePath)) {
-    fs.copyFileSync(examplePath, targetPath);
-    console.log(`Created file: ${description} (${path.basename(targetPath)})`);
-    return;
-  }
-
-  console.log(`Missing example file: ${examplePath}`);
 }
 
 function createDefaultLogoPlaceholder() {
@@ -67,10 +47,6 @@ try {
   ensureDirectoryExists(logsDir, 'Logs folder');
   ensureDirectoryExists(imagesDir, 'Images folder');
 
-  console.log('\nCopying legacy sample files...');
-  copyExampleFile(configExample, configFile, 'Legacy configuration snapshot');
-  copyExampleFile(visitorsExample, visitorsFile, 'Legacy visitors snapshot');
-
   console.log('\nInitialising SQLite database...');
   openDatabase();
   const adminRepository = new AdminUserRepository();
@@ -88,7 +64,6 @@ try {
   console.log('3. SQLite database visitor.db is ready in data/');
   console.log('4. Start the app with npm start');
   console.log('5. Default admin account: admin / 123456');
-  console.log('6. data/config.json and data/visitors.json are legacy compatibility files');
 } catch (error) {
   console.error('Initialization failed:', error.message);
   process.exit(1);

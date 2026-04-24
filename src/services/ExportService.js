@@ -1,5 +1,5 @@
 const VisitorRepository = require('../repositories/VisitorRepository');
-const { buildCsv } = require('../utils/csvExport');
+const { buildWorkbookBuffer } = require('../utils/excelExport');
 
 const EXPORT_COLUMNS = [
   { label: 'Register No', get: (row) => row.registerNo || row.register_no || '' },
@@ -25,11 +25,11 @@ class ExportService {
 
   async exportVisitors(filters = {}) {
     const visitors = await this.visitorRepository.searchRegistrations(filters);
-    const csv = buildCsv(visitors, EXPORT_COLUMNS);
+    const workbook = buildWorkbookBuffer(visitors, EXPORT_COLUMNS);
 
     return {
-      filename: 'visitor-register-export.csv',
-      csv,
+      filename: 'visitor-register-export.xlsx',
+      workbook,
       count: visitors.length,
       columns: EXPORT_COLUMNS.map((column) => column.label)
     };

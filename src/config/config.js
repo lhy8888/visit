@@ -1,49 +1,26 @@
 const path = require('path');
 require('dotenv').config();
 
-function parseBooleanEnv(value, defaultValue = false) {
-  if (value === undefined || value === null || value === '') {
-    return defaultValue;
-  }
-
-  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
-}
-
 /**
- * Configuration centralisée de l'application
+ * Centralized application configuration.
  */
 module.exports = {
-  // Environnement
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT) || 3001,
-  
-  // Chemins des fichiers
+  PORT: parseInt(process.env.PORT, 10) || 3001,
   DATA_DIR: path.resolve(process.env.DATA_DIR || './data'),
-  VISITORS_FILE: path.resolve(process.env.VISITORS_FILE || './data/visitors.json'),
-  CONFIG_FILE: path.resolve(process.env.CONFIG_FILE || './data/config.json'),
   DB_FILE: path.resolve(process.env.DB_FILE || './data/visitor.db'),
   UPLOAD_DIR: path.resolve(process.env.UPLOAD_DIR || './public/images'),
-  VISITOR_JSON_COMPAT_MODE: parseBooleanEnv(process.env.VISITOR_JSON_COMPAT_MODE, false),
-  
-  // Sécurité
+
   ADMIN_DEFAULT_USERNAME: process.env.ADMIN_DEFAULT_USERNAME || 'admin',
   ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || '123456',
   ADMIN_SESSION_COOKIE_NAME: process.env.ADMIN_SESSION_COOKIE_NAME || 'visitor_admin_session',
   ADMIN_SESSION_TTL_HOURS: parseInt(process.env.ADMIN_SESSION_TTL_HOURS, 10) || 12,
-  ANONYMIZATION_DAYS: parseInt(process.env.ANONYMIZATION_DAYS) || 30,
-  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE) || 2000000,
-  
-  // Rate limiting
-  RATE_LIMIT: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW, 10) * 60 * 1000 || (process.env.NODE_ENV === 'test' ? 1 * 60 * 1000 : 15 * 60 * 1000),
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (process.env.NODE_ENV === 'test' ? 1000 : 100)
-  },
-  
-  // Logging
+  ANONYMIZATION_DAYS: parseInt(process.env.ANONYMIZATION_DAYS, 10) || 365,
+  MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 2000000,
+
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   LOG_FILE: path.resolve(process.env.LOG_FILE || './logs/app.log'),
-  
-  // Validation
+
   VALIDATION: {
     PIN_MIN_LENGTH: 4,
     PIN_MAX_LENGTH: 6,

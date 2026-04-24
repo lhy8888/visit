@@ -5,8 +5,6 @@ const fs = require('fs').promises;
 process.env.NODE_ENV = 'test';
 const testDataDir = path.join(__dirname, 'welcome-message-test-data');
 process.env.DATA_DIR = testDataDir;
-process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
-process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
 const SettingsRepository = require('../src/repositories/SettingsRepository');
@@ -22,8 +20,8 @@ describe('Welcome message and public settings', () => {
 
   beforeEach(async () => {
     settingsRepo = new SettingsRepository();
-    await settingsRepo.set('welcome_message', 'Bienvenue');
-    await settingsRepo.set('site_title', 'Visitor Register');
+    await settingsRepo.set('welcome_message', 'Pre-register before you arrive.');
+    await settingsRepo.set('site_title', 'Visitor Access');
     await settingsRepo.set('logo_path', '/images/logo.png');
     await settingsRepo.set('default_timezone', 'UTC');
     await settingsRepo.set('pin_length', '6');
@@ -55,7 +53,7 @@ describe('Welcome message and public settings', () => {
       .expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data.message).toBe('Bienvenue');
+    expect(response.body.data.message).toBe('Pre-register before you arrive.');
   });
 
   test('updates the public welcome message through admin settings', async () => {
@@ -83,8 +81,8 @@ describe('Welcome message and public settings', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data).toMatchObject({
-      welcomeMessage: 'Bienvenue',
-      siteTitle: 'Visitor Register',
+      welcomeMessage: 'Pre-register before you arrive.',
+      siteTitle: 'Visitor Access',
       logoPath: '/images/logo.png',
       defaultTimezone: 'UTC',
       pinLength: 6

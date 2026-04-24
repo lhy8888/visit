@@ -3,16 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin - Visitor Register</title>
+  <title>Admin - Visitor Access</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/admin.js" defer></script>
 </head>
 <body class="page-shell admin-page">
   <main class="page admin-layout">
     <section class="hero">
-      <p class="eyebrow">Administration</p>
-      <h1>Authenticated visitor dashboard</h1>
-      <p class="lead">Log in with the admin account to review today's queue, search the history, export CSV, and manage settings.</p>
+      <h1>Dashboard</h1>
     </section>
 
     <section id="status-message" class="status" aria-live="polite"></section>
@@ -22,9 +20,7 @@
         <div>
           <p class="eyebrow">Sign in</p>
           <h2>Admin access</h2>
-          <p class="helper admin-login-note">Use the username and password for the admin account.</p>
         </div>
-        <span class="pill blue">Session cookie</span>
       </div>
 
       <form id="login-form" class="form-grid">
@@ -50,12 +46,12 @@
         <div class="admin-header">
           <div>
             <p class="eyebrow">Session</p>
-            <h2>Welcome back</h2>
-            <p id="session-banner" class="admin-muted">Loading session...</p>
+            <h2>Signed in</h2>
+            <p id="session-banner" class="admin-muted"></p>
           </div>
           <div class="admin-actions">
             <button id="refresh-dashboard" type="button" class="secondary">Refresh</button>
-            <button id="logout-button" type="button" class="secondary">Log out</button>
+            <button id="logout-button" type="button" class="secondary">Sign out</button>
           </div>
         </div>
 
@@ -65,12 +61,38 @@
       <section class="card admin-section">
         <div class="admin-header">
           <div>
+            <p class="eyebrow">Visitors</p>
+            <h2 id="visitor-table-title">Today</h2>
+          </div>
+          <span id="visitor-table-count" class="pill accent">0 records</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="admin-table" aria-label="Visitor table">
+            <thead>
+              <tr>
+                <th>Visitor</th>
+                <th>Register No</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="visitor-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card admin-section">
+        <div class="admin-header">
+          <div>
             <p class="eyebrow">History</p>
-            <h2>Filter visitors</h2>
-            <p class="helper compact">Search by date range, status, or keyword. The CSV export uses the current filter set.</p>
+            <h2>Filter</h2>
           </div>
           <div class="admin-actions">
-            <button id="export-button" type="button" class="secondary">Export CSV</button>
+            <button id="export-button" type="button" class="secondary">Export Excel</button>
           </div>
         </div>
 
@@ -99,68 +121,22 @@
           </div>
           <div class="field full">
             <div class="admin-actions">
-              <button type="submit">Apply filters</button>
+              <button type="submit">Apply</button>
               <button id="history-reset" type="button" class="secondary">Reset</button>
             </div>
           </div>
         </form>
       </section>
 
-      <section class="admin-split">
-        <section class="card admin-section">
-          <div class="admin-header">
-            <div>
-              <p class="eyebrow">Today</p>
-              <h2>Reception overview</h2>
-            </div>
-            <span id="today-date-pill" class="pill accent"></span>
+      <section class="card admin-section">
+        <div class="admin-header">
+          <div>
+            <p class="eyebrow">Settings</p>
+            <h2>Settings</h2>
           </div>
+        </div>
 
-          <div id="today-metrics" class="metric-strip"></div>
-
-          <div class="list-panel">
-            <div class="list-header">
-              <h3>Waiting</h3>
-              <span id="today-pending-count" class="pill"></span>
-            </div>
-            <div id="today-pending-list" class="list"></div>
-          </div>
-
-          <div class="list-panel">
-            <div class="list-header">
-              <h3>Checked in</h3>
-              <span id="today-checkedin-count" class="pill"></span>
-            </div>
-            <div id="today-checkedin-list" class="list"></div>
-          </div>
-
-          <div class="list-panel">
-            <div class="list-header">
-              <h3>Future</h3>
-              <span id="today-future-count" class="pill"></span>
-            </div>
-            <div id="today-future-list" class="list"></div>
-          </div>
-        </section>
-
-        <section class="card admin-section">
-          <div class="admin-header">
-            <div>
-              <p class="eyebrow">Settings</p>
-              <h2>Site configuration</h2>
-            </div>
-          </div>
-
-          <div id="settings-list" class="settings-list"></div>
-
-          <div class="list-panel">
-            <div class="list-header">
-              <h3>Filtered history</h3>
-              <span id="history-count" class="pill"></span>
-            </div>
-            <div id="history-list" class="history-list"></div>
-          </div>
-        </section>
+        <div id="settings-list" class="settings-list"></div>
       </section>
     </section>
   </main>

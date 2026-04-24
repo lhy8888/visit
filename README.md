@@ -8,10 +8,10 @@ Lightweight office visitor system for a small office of about 100 people.
 - Auto-generated `registerNo`, PIN code, and QR token
 - Reception check-in by PIN, register number, or QR scan
 - Today dashboard for pending, checked-in, and future visitors
-- History filtering and CSV export
+- History filtering and Excel export
 - SQLite single-file storage
 - Session-based admin authentication
-- Legacy endpoints kept for migration and tests, marked as deprecated
+- Legacy endpoints may still exist for backward compatibility, but the main flow is SQLite only
 
 ## Main pages
 
@@ -45,20 +45,7 @@ Default admin credentials:
 ## Data files
 
 - `data/visitor.db` is the SQLite database
-- `data/config.json` is legacy bootstrap/backup storage only and is not part of the normal runtime config source
-- `data/visitors.json` is only used for legacy import or backup
 - Live public/admin settings are stored in SQLite `app_settings`
-- Set `VISITOR_JSON_COMPAT_MODE=1` only if you need temporary JSON mirroring during a migration. The default runtime does not mirror JSON.
-
-## Migration from JSON
-
-If you already have legacy JSON data, import it into SQLite with:
-
-```bash
-npm run migrate:json-to-sqlite
-```
-
-The migration reads `data/visitors.json` and imports records into `data/visitor.db`.
 
 ## API summary
 
@@ -84,7 +71,7 @@ The migration reads `data/visitors.json` and imports records into `data/visitor.
 - `GET /api/admin/dashboard/today`
 - `GET /api/admin/visitors`
 - `GET /api/admin/stats/summary`
-- `GET /api/admin/export.csv`
+- `GET /api/admin/export.xlsx`
 - `PATCH /api/admin/visitors/:id/void`
 - `GET /api/admin/settings`
 - `PUT /api/admin/settings`
@@ -114,10 +101,9 @@ The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`
 
 - `npm test` runs the full test suite
 - `npm run init` initializes the app and seeds the default admin account
-- `npm run migrate:json-to-sqlite` imports legacy JSON visitors into SQLite
 
 ## Notes
 
 - No external database server is required
 - No Docker is required
-- Legacy JSON endpoints are kept only for compatibility and gradual migration
+- The app is designed around SQLite and does not rely on a live JSON store

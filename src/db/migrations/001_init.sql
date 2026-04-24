@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS visitors (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
 
-  -- Legacy compatibility columns kept during the transition period
+  -- Additional fields kept for older records and archive support
   nom TEXT,
   prenom TEXT,
   societe TEXT,
@@ -60,11 +60,11 @@ CREATE TABLE IF NOT EXISTS app_settings (
 );
 
 INSERT OR IGNORE INTO app_settings (key, value, updated_at) VALUES
-  ('site_title', 'Visitor Register', datetime('now')),
-  ('welcome_message', 'Bienvenue dans notre entreprise', datetime('now')),
+  ('site_title', 'Visitor Access', datetime('now')),
+  ('welcome_message', 'Pre-register before you arrive.', datetime('now')),
   ('logo_path', '/images/logo.png', datetime('now')),
   ('default_timezone', 'Europe/London', datetime('now')),
   ('pin_length', '6', datetime('now')),
-  ('data_retention_days', '30', datetime('now')),
+  ('data_retention_days', '365', datetime('now')),
   ('enable_qr_checkin', '1', datetime('now')),
   ('enable_pin_checkin', '1', datetime('now'));

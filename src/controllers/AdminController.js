@@ -93,10 +93,10 @@ class AdminController {
   exportVisitors = asyncHandler(async (req, res) => {
     const result = await this.exportService.exportVisitors(req.query || {});
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
 
-    res.status(200).send(result.csv);
+    res.status(200).send(result.workbook);
   });
 
   voidVisitor = asyncHandler(async (req, res) => {

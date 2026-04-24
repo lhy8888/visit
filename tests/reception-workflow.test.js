@@ -6,8 +6,6 @@ process.env.NODE_ENV = 'test';
 
 const testDataDir = path.join(__dirname, 'reception-test-data');
 process.env.DATA_DIR = testDataDir;
-process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
-process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
 const { closeDatabase } = require('../src/db/sqlite');
@@ -26,8 +24,7 @@ describe('Reception workflow', () => {
 
   beforeEach(async () => {
     visitorRepo = new VisitorRepository({
-      dbPath: process.env.DB_FILE,
-      legacyFilePath: null
+      dbPath: process.env.DB_FILE
     });
     await visitorRepo.deleteAll();
   });
@@ -58,7 +55,25 @@ describe('Reception workflow', () => {
       .get('/reception')
       .expect(200);
 
-    expect(response.text).toContain('Visitor kiosk');
+    expect(response.text).toContain('Visitor Access');
+  });
+
+  test('registers a walk-in visitor without a date field', async () => {
+    const response = await request(app)
+      .post('/api/registrations')
+      .send({
+        visitor_name: 'Walk-in Visitor',
+        host_name: 'Front Desk',
+        source: 'reception'
+      })
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.source).toBe('reception');
+    expect(response.body.data.scheduledDate).toBe(todayKey);
+    expect(response.body.data.registerNo).toMatch(/^V\d{8}-\d{4}$/);
+    expect(response.body.data.status).toBe('checked_in');
+    expect(response.body.data.checkedInAt).toBeTruthy();
   });
 
   test('shows today waiting and future registrations', async () => {

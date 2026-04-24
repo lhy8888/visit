@@ -5,6 +5,9 @@ const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { DEFAULT_TIME_ZONE, normalizeDateOnly } = require('../utils/registerNo');
 
+const DEFAULT_SITE_TITLE = 'Visitor Access';
+const DEFAULT_WELCOME_MESSAGE = 'Pre-register before you arrive.';
+
 function toNullableString(value) {
   if (value === undefined || value === null) {
     return null;
@@ -249,12 +252,12 @@ class DashboardService {
 
   _normalizeSettings(rawSettings = {}) {
     return {
-      siteTitle: rawSettings.site_title || rawSettings.siteTitle || 'Visitor Register',
-      welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || 'Bienvenue dans notre entreprise',
+      siteTitle: rawSettings.site_title || rawSettings.siteTitle || DEFAULT_SITE_TITLE,
+      welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
       logoPath: rawSettings.logo_path || rawSettings.logoPath || '/images/logo.png',
       defaultTimezone: rawSettings.default_timezone || rawSettings.defaultTimezone || DEFAULT_TIME_ZONE,
       pinLength: toNumericSetting(rawSettings.pin_length || rawSettings.pinLength, 6),
-      dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 30),
+      dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 365),
       enableQrCheckin: toBooleanSetting(rawSettings.enable_qr_checkin ?? rawSettings.enableQrCheckin ?? true),
       enablePinCheckin: toBooleanSetting(rawSettings.enable_pin_checkin ?? rawSettings.enablePinCheckin ?? true)
     };

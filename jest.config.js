@@ -10,8 +10,7 @@ module.exports = {
     '**/tests/**/*.test.js'
   ],
   testPathIgnorePatterns: [
-    '/node_modules/',
-    '/gestion-visiteurs/'
+    '/node_modules/'
   ],
   verbose: true,
   coverageThreshold: {
