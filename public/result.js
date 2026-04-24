@@ -1,13 +1,10 @@
-const registerNoElement = document.getElementById('register-no');
 const pinCodeElement = document.getElementById('pin-code');
 const visitorNameElement = document.getElementById('visitor-name');
-const hostNameElement = document.getElementById('host-name');
 const scheduledDateElement = document.getElementById('scheduled-date');
 const statusElement = document.getElementById('status');
 const qrImageElement = document.getElementById('qr-image');
 const qrContentElement = document.getElementById('qr-content');
 const resultMessageElement = document.getElementById('result-message');
-const copyRegisterNoButton = document.getElementById('copy-register-no');
 const copyPinButton = document.getElementById('copy-pin');
 
 function setText(element, value) {
@@ -70,22 +67,16 @@ async function loadResult() {
     }
 
     const registration = body.data;
-    setText(registerNoElement, registration.registerNo);
     setText(pinCodeElement, registration.pinCode);
     setText(visitorNameElement, registration.visitorName || '-');
-    setText(hostNameElement, registration.hostName || '-');
     setText(scheduledDateElement, formatDate(registration.scheduledDate));
     setText(statusElement, registration.status || '-');
     setText(qrContentElement, registration.qrContent || registration.qrToken || '-');
-    setText(resultMessageElement, 'Keep this page open or print it for reception.');
+    setText(resultMessageElement, 'Keep the PIN visible or print this page for reception.');
 
     if (qrImageElement && registration.qrDataUrl) {
       qrImageElement.hidden = false;
       qrImageElement.src = registration.qrDataUrl;
-    }
-
-    if (copyRegisterNoButton) {
-      copyRegisterNoButton.addEventListener('click', () => copyText(registration.registerNo, 'Register number'));
     }
 
     if (copyPinButton) {

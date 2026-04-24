@@ -312,7 +312,7 @@ async function handleRegistrationSubmit(event) {
   }
 
   setRegistrationStatus('');
-  setButtonLoading(registrationSubmitButton, true, 'Create visitor pass');
+  setButtonLoading(registrationSubmitButton, true, 'Submit');
 
   try {
     const formData = new FormData(registrationForm);
@@ -340,7 +340,7 @@ async function handleRegistrationSubmit(event) {
   } catch (error) {
     setRegistrationStatus(error.message || 'Registration failed', true);
   } finally {
-    setButtonLoading(registrationSubmitButton, false, 'Create visitor pass');
+    setButtonLoading(registrationSubmitButton, false, 'Submit');
   }
 }
 

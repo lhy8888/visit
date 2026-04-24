@@ -99,7 +99,7 @@ async function handleSubmit(event) {
     setStatus(error.message || 'Registration failed', true);
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = 'Submit registration';
+    submitButton.textContent = 'Submit';
   }
 }
 

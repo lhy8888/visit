@@ -72,7 +72,9 @@ describe('Registration workflow', () => {
       .get(`/result/${encodeURIComponent(createResponse.body.data.registerNo)}`)
       .expect(200);
 
-    expect(resultPage.text).toContain('Your visitor pass is ready');
+    expect(resultPage.text).toContain('Your PIN is ready');
+    expect(resultPage.text).not.toContain('Host name');
+    expect(resultPage.text).not.toContain('Register number');
   });
 
   test('keeps registered visitors out of the current list', async () => {

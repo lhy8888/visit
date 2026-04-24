@@ -6,45 +6,37 @@
   <title>Registration result</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<body class="page-shell">
+<body class="page-shell result-page">
   <main class="page">
     <section class="hero">
       <p class="eyebrow">Registration complete</p>
-      <h1 id="result-title">Your visitor pass is ready</h1>
-      <p class="lead">Show the PIN, register number or QR code at the reception desk.</p>
+      <h1 id="result-title">Your PIN is ready</h1>
+      <p class="lead">Show this PIN or the QR code at reception. Keep this page handy for check-in.</p>
     </section>
 
-    <section class="panel-grid">
-      <article class="card">
-        <div class="result-metrics">
-          <div class="metric">
-            <span>Register number</span>
-            <strong id="register-no">Loading...</strong>
-          </div>
-          <div class="metric">
-            <span>PIN code</span>
-            <strong id="pin-code">Loading...</strong>
-          </div>
+    <section class="panel-grid result-grid">
+      <article class="card result-main">
+        <div class="pin-feature">
+          <span>PIN code</span>
+          <strong id="pin-code">Loading...</strong>
+        </div>
+
+        <div class="result-metrics result-summary">
           <div class="metric">
             <span>Visitor name</span>
             <strong id="visitor-name">Loading...</strong>
           </div>
           <div class="metric">
-            <span>Host name</span>
-            <strong id="host-name">Loading...</strong>
-          </div>
-          <div class="metric">
             <span>Planned date</span>
             <strong id="scheduled-date">Loading...</strong>
           </div>
-          <div class="metric">
+          <div class="metric status-metric">
             <span>Status</span>
             <strong id="status">Loading...</strong>
           </div>
         </div>
 
         <div class="toolbar">
-          <button id="copy-register-no" class="secondary" type="button">Copy register number</button>
           <button id="copy-pin" class="secondary" type="button">Copy PIN</button>
           <a class="secondary button-link" href="/">Create another registration</a>
         </div>
