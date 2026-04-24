@@ -78,6 +78,34 @@ body.reception-page::before {
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent);
 }
 
+body.home-page {
+  color-scheme: light;
+  min-height: 100dvh;
+  --bg: #f5f8fc;
+  --bg-soft: rgba(255, 255, 255, 0.86);
+  --surface: rgba(255, 255, 255, 0.95);
+  --surface-2: rgba(255, 255, 255, 0.78);
+  --border: rgba(15, 23, 42, 0.10);
+  --text: #102033;
+  --muted: #5a687d;
+  --accent: #0d9488;
+  --accent-2: #2563eb;
+  --error: #b42318;
+  --shadow: 0 22px 55px rgba(15, 23, 42, 0.09);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 30%),
+    radial-gradient(circle at top right, rgba(13, 148, 136, 0.10), transparent 26%),
+    linear-gradient(180deg, #fbfdff 0%, #eef3f8 100%);
+}
+
+body.home-page::before {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), transparent);
+}
+
 body.result-page {
   color-scheme: light;
   min-height: 100dvh;
@@ -228,6 +256,18 @@ body.result-page .card {
   border-color: rgba(15, 23, 42, 0.10);
 }
 
+body.home-page .card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(247, 250, 255, 0.95));
+  border-color: rgba(15, 23, 42, 0.10);
+}
+
+body.home-page button.secondary,
+body.home-page .button-link.secondary {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--text);
+  border-color: rgba(37, 99, 235, 0.12);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -276,6 +316,13 @@ body.reception-page select {
   border-color: rgba(15, 23, 42, 0.10);
 }
 
+body.home-page input,
+body.home-page textarea,
+body.home-page select {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 23, 42, 0.10);
+}
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -287,6 +334,13 @@ select:focus {
 body.reception-page input:focus,
 body.reception-page textarea:focus,
 body.reception-page select:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+body.home-page input:focus,
+body.home-page textarea:focus,
+body.home-page select:focus {
   border-color: rgba(37, 99, 235, 0.45);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
