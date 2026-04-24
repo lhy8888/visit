@@ -2,97 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Reception - Visitor Register</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<body class="page-shell">
+<body class="page-shell reception-page">
   <main class="page">
     <section class="hero">
       <div class="brand">
         <img id="site-logo" class="brand-logo" src="/images/logo.png" alt="Company logo" hidden>
         <div>
           <p class="eyebrow">Reception</p>
-          <h1 id="page-title">Check-in command centre</h1>
+          <h1 id="page-title">Visitor kiosk</h1>
         </div>
       </div>
-      <p class="lead">Use the PIN, register number or QR code to register visitors at the front desk. The live queue below shows who is waiting, who has already arrived, and what is still scheduled later today.</p>
 
-      <div class="search-row">
-        <form id="lookup-form" class="search-row" novalidate>
-          <input id="identifier-input" name="identifier" type="text" autocomplete="off" placeholder="PIN, register number or QR token">
-          <button id="lookup-button" type="submit">Check in</button>
-        </form>
-        <button id="start-scan-button" class="secondary" type="button">Start camera scan</button>
-        <button id="stop-scan-button" class="secondary" type="button" hidden>Stop scan</button>
-        <button id="refresh-button" class="secondary" type="button">Refresh queue</button>
+      <div class="mode-switch kiosk-switch" role="tablist" aria-label="Visitor flow">
+        <button id="checkin-mode-button" class="mode-button active" type="button" data-kiosk-mode="checkin" aria-pressed="true">Check in</button>
+        <button id="register-mode-button" class="mode-button" type="button" data-kiosk-mode="register" aria-pressed="false">Direct registration</button>
       </div>
 
       <p id="status-message" class="status" aria-live="polite"></p>
     </section>
 
     <section class="reception-grid">
-      <article class="card dashboard-card">
-        <div class="metric-strip">
-          <div class="metric">
-            <span>Today waiting</span>
-            <strong id="pending-count">0</strong>
-          </div>
-          <div class="metric">
-            <span>Today checked in</span>
-            <strong id="checkedin-count">0</strong>
-          </div>
-          <div class="metric">
-            <span>Future bookings</span>
-            <strong id="future-count">0</strong>
-          </div>
+      <article id="checkin-panel" class="card checkin-panel">
+        <div class="panel-head">
+          <p class="eyebrow">Check-in</p>
+          <h2>Choose PIN input or camera scan</h2>
         </div>
 
-        <div class="scanner-card">
-          <div class="list-header">
-            <div>
-              <p class="eyebrow">Camera scan</p>
-              <h2>Scan QR with the device camera</h2>
-            </div>
-            <span class="pill accent" id="scanner-state">Idle</span>
-          </div>
+        <div class="mode-switch checkin-switch" role="tablist" aria-label="Check-in method">
+          <button id="pin-mode-button" class="mode-button active" type="button" data-checkin-mode="pin" aria-pressed="true">PIN input</button>
+          <button id="camera-mode-button" class="mode-button" type="button" data-checkin-mode="camera" aria-pressed="false">Camera scan</button>
+        </div>
 
+        <article id="pin-panel" class="inner-panel">
+          <form id="lookup-form" class="lookup-form" novalidate>
+            <input id="identifier-input" name="identifier" type="text" autocomplete="off" placeholder="PIN, register number or QR token">
+            <button id="lookup-button" type="submit">Check in</button>
+          </form>
+        </article>
+
+        <article id="camera-panel" class="inner-panel hidden">
           <video id="scanner-video" class="scanner-video" autoplay muted playsinline hidden></video>
-          <p id="scanner-message" class="helper">Use the built-in QR detector in a supported browser. If the camera is unavailable, the manual PIN entry above still works.</p>
-        </div>
+
+          <div class="toolbar">
+            <button id="start-scan-button" class="secondary" type="button">Start camera scan</button>
+            <button id="stop-scan-button" class="secondary" type="button" hidden>Stop scan</button>
+          </div>
+        </article>
       </article>
 
-      <article class="card dashboard-card">
-        <div class="list-header">
-          <div>
-            <p class="eyebrow">Live queue</p>
-            <h2 id="dashboard-date">Today</h2>
-          </div>
+      <article id="register-panel" class="card checkin-panel hidden">
+        <div class="panel-head">
+          <p class="eyebrow">Direct registration</p>
+          <h2>Register a visitor without a prior booking</h2>
         </div>
 
-        <section class="list-panel">
-          <div class="list-header">
-            <h3>Today waiting</h3>
-            <span id="pending-badge" class="pill">0</span>
+        <form id="registration-form" class="form-grid register-form" novalidate>
+          <div class="field">
+            <label for="visitor_name">Visitor name</label>
+            <input id="visitor_name" name="visitor_name" type="text" autocomplete="name" required placeholder="Jane Doe">
           </div>
-          <div id="pending-list" class="list"></div>
-        </section>
 
-        <section class="list-panel">
-          <div class="list-header">
-            <h3>Today checked in</h3>
-            <span id="checkedin-badge" class="pill">0</span>
+          <div class="field">
+            <label for="company">Company</label>
+            <input id="company" name="company" type="text" autocomplete="organization" placeholder="Acme Ltd">
           </div>
-          <div id="checkedin-list" class="list"></div>
-        </section>
 
-        <section class="list-panel">
-          <div class="list-header">
-            <h3>Future registrations</h3>
-            <span id="future-badge" class="pill">0</span>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="jane@example.com">
           </div>
-          <div id="future-list" class="list"></div>
-        </section>
+
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+44 7000 000000">
+          </div>
+
+          <div class="field">
+            <label for="host_name">Person to visit</label>
+            <input id="host_name" name="host_name" type="text" required placeholder="John Smith">
+          </div>
+
+          <div class="field">
+            <label for="scheduled_date">Visit date</label>
+            <input id="scheduled_date" name="scheduled_date" type="date" required>
+          </div>
+
+          <div class="field full">
+            <label for="visit_purpose">Visit purpose</label>
+            <textarea id="visit_purpose" name="visit_purpose" placeholder="Meeting, delivery, interview, etc."></textarea>
+          </div>
+
+          <div class="field full">
+            <button id="registration-submit-button" type="submit">Create visitor pass</button>
+          </div>
+        </form>
+
+        <p class="helper">We will generate a register number, a PIN and a QR code after submission.</p>
+        <p id="registration-status" class="status" aria-live="polite"></p>
       </article>
     </section>
   </main>

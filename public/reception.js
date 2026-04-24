@@ -3,28 +3,26 @@ const identifierInput = document.getElementById('identifier-input');
 const lookupButton = document.getElementById('lookup-button');
 const startScanButton = document.getElementById('start-scan-button');
 const stopScanButton = document.getElementById('stop-scan-button');
-const refreshButton = document.getElementById('refresh-button');
+const registrationForm = document.getElementById('registration-form');
+const registrationStatus = document.getElementById('registration-status');
+const registrationSubmitButton = document.getElementById('registration-submit-button');
+const scheduledDateInput = document.getElementById('scheduled_date');
 const statusMessage = document.getElementById('status-message');
-const scannerMessage = document.getElementById('scanner-message');
-const scannerState = document.getElementById('scanner-state');
 const scannerVideo = document.getElementById('scanner-video');
-const pendingList = document.getElementById('pending-list');
-const checkedInList = document.getElementById('checkedin-list');
-const futureList = document.getElementById('future-list');
-const pendingCount = document.getElementById('pending-count');
-const checkedInCount = document.getElementById('checkedin-count');
-const futureCount = document.getElementById('future-count');
-const pendingBadge = document.getElementById('pending-badge');
-const checkedInBadge = document.getElementById('checkedin-badge');
-const futureBadge = document.getElementById('future-badge');
-const dashboardDate = document.getElementById('dashboard-date');
+const checkinPanel = document.getElementById('checkin-panel');
+const pinPanel = document.getElementById('pin-panel');
+const cameraPanel = document.getElementById('camera-panel');
+const registerPanel = document.getElementById('register-panel');
+const kioskModeButtons = Array.from(document.querySelectorAll('[data-kiosk-mode]'));
+const checkinModeButtons = Array.from(document.querySelectorAll('[data-checkin-mode]'));
 
 const state = {
-  dashboard: null,
   scannerStream: null,
   scannerDetector: null,
   scanning: false,
-  scanFrameHandle: null
+  scanFrameHandle: null,
+  kioskMode: 'checkin',
+  checkinMode: 'pin'
 };
 
 function setStatus(message, isError = false) {
@@ -34,52 +32,6 @@ function setStatus(message, isError = false) {
 
   statusMessage.textContent = message;
   statusMessage.classList.toggle('error', Boolean(isError));
-}
-
-function setScannerMessage(message, isError = false) {
-  if (!scannerMessage) {
-    return;
-  }
-
-  scannerMessage.textContent = message;
-  scannerMessage.classList.toggle('error', Boolean(isError));
-}
-
-function setScannerState(label) {
-  if (scannerState) {
-    scannerState.textContent = label;
-  }
-}
-
-function formatDate(value) {
-  if (!value) {
-    return '-';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('en-GB', {
-    dateStyle: 'medium'
-  }).format(parsed);
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return '-';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(parsed);
 }
 
 function setButtonLoading(button, isLoading, label) {
@@ -93,196 +45,29 @@ function setButtonLoading(button, isLoading, label) {
   }
 }
 
-function clearList(container) {
-  if (container) {
-    container.innerHTML = '';
-  }
-}
-
-function createPill(text, variant = '') {
-  const pill = document.createElement('span');
-  pill.className = variant ? `pill ${variant}` : 'pill';
-  pill.textContent = text;
-  return pill;
-}
-
-function createMetaRow(values) {
-  const row = document.createElement('div');
-  row.className = 'meta-row';
-  values.filter(Boolean).forEach((value) => {
-    row.appendChild(value);
-  });
-  return row;
-}
-
-function createActionButton(label, handler, variant = 'secondary') {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = variant;
-  button.textContent = label;
-  button.addEventListener('click', handler);
-  return button;
-}
-
-function createVisitorCard(visitor, options = {}) {
-  const article = document.createElement('article');
-  article.className = 'list-item';
-
-  const header = document.createElement('div');
-  header.className = 'list-item-header';
-
-  const titleGroup = document.createElement('div');
-  titleGroup.className = 'list-item-title-group';
-
-  const title = document.createElement('strong');
-  title.textContent = visitor.visitorName || visitor.nom || 'Visitor';
-  titleGroup.appendChild(title);
-
-  const subTitle = document.createElement('span');
-  subTitle.className = 'subtle';
-  subTitle.textContent = [visitor.company, visitor.hostName]
-    .filter(Boolean)
-    .join(' - ') || 'No company or host provided';
-  titleGroup.appendChild(subTitle);
-
-  header.appendChild(titleGroup);
-  header.appendChild(createPill(options.statusLabel || visitor.status || 'registered', options.statusVariant || ''));
-  article.appendChild(header);
-
-  const metaValues = [
-    createPill(visitor.registerNo ? `#${visitor.registerNo}` : `ID ${visitor.id}`, 'accent'),
-    visitor.pinCode ? createPill(`PIN ${visitor.pinCode}`, 'blue') : null,
-    visitor.scheduledDate ? createPill(formatDate(visitor.scheduledDate)) : null,
-    visitor.checkedInAt ? createPill(`In ${formatDateTime(visitor.checkedInAt)}`) : null,
-    visitor.checkedOutAt ? createPill(`Out ${formatDateTime(visitor.checkedOutAt)}`) : null
-  ];
-
-  article.appendChild(createMetaRow(metaValues));
-
-  if (visitor.visitPurpose) {
-    const purpose = document.createElement('p');
-    purpose.className = 'helper compact';
-    purpose.textContent = visitor.visitPurpose;
-    article.appendChild(purpose);
-  }
-
-  if (options.actions && options.actions.length > 0) {
-    const actions = document.createElement('div');
-    actions.className = 'toolbar compact';
-    options.actions.forEach((action) => {
-      actions.appendChild(createActionButton(action.label, action.handler, action.variant));
-    });
-    article.appendChild(actions);
-  }
-
-  return article;
-}
-
-function renderList(container, items, emptyMessage, options = {}) {
-  clearList(container);
-
-  if (!container) {
+function setRegistrationStatus(message, isError = false) {
+  if (!registrationStatus) {
     return;
   }
 
-  if (!items || items.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'helper compact empty-state';
-    empty.textContent = emptyMessage;
-    container.appendChild(empty);
+  registrationStatus.textContent = message;
+  registrationStatus.classList.toggle('error', Boolean(isError));
+}
+
+function getTodayDateKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function setDefaultRegistrationDate() {
+  if (!scheduledDateInput) {
     return;
   }
 
-  items.forEach((visitor) => {
-    container.appendChild(createVisitorCard(visitor, {
-      statusLabel: options.statusLabel,
-      statusVariant: options.statusVariant,
-      actions: options.actionsFactory ? options.actionsFactory(visitor) : []
-    }));
-  });
-}
-
-function updateSummary(dashboard) {
-  const counts = dashboard?.counts || { pending: 0, checkedIn: 0, future: 0 };
-
-  if (pendingCount) pendingCount.textContent = String(counts.pending || 0);
-  if (checkedInCount) checkedInCount.textContent = String(counts.checkedIn || 0);
-  if (futureCount) futureCount.textContent = String(counts.future || 0);
-  if (pendingBadge) pendingBadge.textContent = String(counts.pending || 0);
-  if (checkedInBadge) checkedInBadge.textContent = String(counts.checkedIn || 0);
-  if (futureBadge) futureBadge.textContent = String(counts.future || 0);
-
-  if (dashboardDate) {
-    dashboardDate.textContent = dashboard?.date ? `Queue for ${formatDate(dashboard.date)}` : 'Today';
+  const today = getTodayDateKey();
+  scheduledDateInput.min = today;
+  if (!scheduledDateInput.value) {
+    scheduledDateInput.value = today;
   }
-}
-
-function renderDashboard(dashboard) {
-  state.dashboard = dashboard;
-  updateSummary(dashboard);
-
-  renderList(
-    pendingList,
-    dashboard?.pending || [],
-    'No visitors are waiting right now.',
-    {
-      statusLabel: 'Waiting',
-      statusVariant: 'warn',
-      actionsFactory: (visitor) => [
-        {
-          label: 'Check in',
-          handler: () => submitCheckIn(visitor.registerNo || visitor.pinCode || visitor.id),
-          variant: 'secondary'
-        },
-        visitor.pinCode
-          ? {
-              label: 'Copy PIN',
-              handler: () => copyText(visitor.pinCode, 'PIN'),
-              variant: 'secondary'
-            }
-          : null
-      ].filter(Boolean)
-    }
-  );
-
-  renderList(
-    checkedInList,
-    dashboard?.checkedIn || [],
-    'No visitors are currently checked in.',
-    {
-      statusLabel: 'Checked in',
-      statusVariant: 'accent',
-      actionsFactory: (visitor) => [
-        {
-          label: 'Check out',
-          handler: () => submitCheckout(visitor.id),
-          variant: 'secondary'
-        }
-      ]
-    }
-  );
-
-  renderList(
-    futureList,
-    dashboard?.future || [],
-    'No future registrations yet.',
-    {
-      statusLabel: 'Future',
-      statusVariant: 'blue'
-    }
-  );
-}
-
-function copyText(value, label) {
-  if (!value) {
-    return;
-  }
-
-  navigator.clipboard.writeText(String(value)).then(() => {
-    setStatus(`${label} copied to clipboard.`);
-  }).catch(() => {
-    setStatus(`Could not copy ${label.toLowerCase()}.`, true);
-  });
 }
 
 async function apiJson(url, options = {}) {
@@ -302,22 +87,73 @@ async function apiJson(url, options = {}) {
   return payload;
 }
 
-async function loadDashboard(options = {}) {
-  const silent = Boolean(options.silent);
+function setCheckinMode(mode) {
+  state.checkinMode = mode;
 
-  try {
-    if (!silent) {
-      setStatus('Loading queue...');
+  checkinModeButtons.forEach((button) => {
+    const active = button.dataset.checkinMode === mode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  if (pinPanel) {
+    pinPanel.classList.toggle('hidden', mode !== 'pin');
+  }
+
+  if (cameraPanel) {
+    cameraPanel.classList.toggle('hidden', mode !== 'camera');
+  }
+
+  if (mode !== 'camera') {
+    stopScanner(false);
+  }
+
+  if (mode === 'pin' && identifierInput) {
+    identifierInput.focus();
+  }
+
+  if (mode !== 'pin' && identifierInput) {
+    identifierInput.blur();
+  }
+
+  setStatus('');
+}
+
+function setKioskMode(mode) {
+  state.kioskMode = mode;
+
+  kioskModeButtons.forEach((button) => {
+    const active = button.dataset.kioskMode === mode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  if (checkinPanel) {
+    checkinPanel.classList.toggle('hidden', mode !== 'checkin');
+  }
+
+  if (registerPanel) {
+    registerPanel.classList.toggle('hidden', mode !== 'register');
+  }
+
+  if (mode === 'checkin') {
+    setRegistrationStatus('');
+    setCheckinMode(state.checkinMode || 'pin');
+  } else {
+    stopScanner(false);
+    setStatus('');
+    if (identifierInput) {
+      identifierInput.blur();
     }
-
-    const payload = await apiJson('/api/reception/today');
-    renderDashboard(payload.data || {});
-
-    if (!silent) {
-      setStatus('Queue updated.');
+    if (scheduledDateInput) {
+      scheduledDateInput.blur();
     }
-  } catch (error) {
-    setStatus(error.message || 'Could not load reception data.', true);
+    if (registrationForm) {
+      const firstField = registrationForm.querySelector('#visitor_name');
+      if (firstField && typeof firstField.focus === 'function') {
+        firstField.focus();
+      }
+    }
   }
 }
 
@@ -340,8 +176,6 @@ async function submitCheckIn(identifier) {
       identifierInput.value = '';
       identifierInput.focus();
     }
-
-    await loadDashboard({ silent: true });
   } catch (error) {
     setStatus(error.message || 'Check-in failed.', true);
   } finally {
@@ -363,27 +197,12 @@ async function submitQrCheckIn(token) {
     });
 
     setStatus(payload.message || 'Visitor checked in from QR.');
-    await loadDashboard({ silent: true });
   } catch (error) {
     setStatus(error.message || 'QR check-in failed.', true);
   }
 }
 
-async function submitCheckout(id) {
-  try {
-    const payload = await apiJson(`/api/checkout/${encodeURIComponent(id)}`, {
-      method: 'POST',
-      body: JSON.stringify({})
-    });
-
-    setStatus(payload.message || 'Visitor checked out.');
-    await loadDashboard({ silent: true });
-  } catch (error) {
-    setStatus(error.message || 'Check-out failed.', true);
-  }
-}
-
-function stopScanner(updateMessage = true) {
+function stopScanner(showMessage = false) {
   state.scanning = false;
 
   if (state.scanFrameHandle) {
@@ -409,9 +228,8 @@ function stopScanner(updateMessage = true) {
     stopScanButton.hidden = true;
   }
 
-  setScannerState('Idle');
-  if (updateMessage) {
-    setScannerMessage('Camera scan stopped.');
+  if (showMessage) {
+    setStatus('Camera scan stopped.');
   }
 }
 
@@ -427,14 +245,13 @@ async function scanLoop() {
         const token = String(codes[0].rawValue).trim();
         if (token) {
           stopScanner(false);
-          setScannerMessage(`QR detected: ${token.slice(0, 12)}${token.length > 12 ? '...' : ''}`);
           await submitQrCheckIn(token);
           return;
         }
       }
     }
   } catch (error) {
-    setScannerMessage(error.message || 'Unable to scan QR code right now.', true);
+    setStatus(error.message || 'Unable to scan QR code right now.', true);
   }
 
   state.scanFrameHandle = requestAnimationFrame(scanLoop);
@@ -450,7 +267,6 @@ async function startScanner() {
       throw new Error('Camera access is not available in this browser.');
     }
 
-    setScannerMessage('Requesting camera access...');
     state.scannerDetector = new BarcodeDetector({ formats: ['qr_code'] });
     state.scannerStream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -466,8 +282,6 @@ async function startScanner() {
     }
 
     state.scanning = true;
-    setScannerState('Scanning');
-    setScannerMessage('Point the camera at a QR code.');
 
     if (startScanButton) {
       startScanButton.hidden = true;
@@ -480,7 +294,7 @@ async function startScanner() {
     scanLoop();
   } catch (error) {
     stopScanner(false);
-    setScannerMessage(error.message || 'Could not start the camera scanner.', true);
+    setStatus(error.message || 'Could not start the camera scanner.', true);
   }
 }
 
@@ -488,6 +302,46 @@ async function handleLookupSubmit(event) {
   event.preventDefault();
   const identifier = identifierInput ? identifierInput.value.trim() : '';
   await submitCheckIn(identifier);
+}
+
+async function handleRegistrationSubmit(event) {
+  event.preventDefault();
+
+  if (!registrationForm) {
+    return;
+  }
+
+  setRegistrationStatus('');
+  setButtonLoading(registrationSubmitButton, true, 'Create visitor pass');
+
+  try {
+    const formData = new FormData(registrationForm);
+    const payload = {
+      visitor_name: formData.get('visitor_name'),
+      company: formData.get('company'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      host_name: formData.get('host_name'),
+      visit_purpose: formData.get('visit_purpose'),
+      scheduled_date: formData.get('scheduled_date')
+    };
+
+    const response = await apiJson('/api/registrations', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const resultUrl = response?.data?.resultUrl || `/result/${encodeURIComponent(response?.data?.registerNo || '')}`;
+    if (!resultUrl || resultUrl.endsWith('/result/')) {
+      throw new Error('Registration created but result page could not be resolved.');
+    }
+
+    window.location.assign(resultUrl);
+  } catch (error) {
+    setRegistrationStatus(error.message || 'Registration failed', true);
+  } finally {
+    setButtonLoading(registrationSubmitButton, false, 'Create visitor pass');
+  }
 }
 
 if (lookupForm) {
@@ -499,11 +353,21 @@ if (startScanButton) {
 }
 
 if (stopScanButton) {
-  stopScanButton.addEventListener('click', () => stopScanner(true));
+  stopScanButton.addEventListener('click', () => stopScanner(false));
 }
 
-if (refreshButton) {
-  refreshButton.addEventListener('click', () => loadDashboard());
+kioskModeButtons.forEach((button) => {
+  button.addEventListener('click', () => setKioskMode(button.dataset.kioskMode || 'checkin'));
+});
+
+checkinModeButtons.forEach((button) => {
+  button.addEventListener('click', () => setCheckinMode(button.dataset.checkinMode || 'pin'));
+});
+
+if (registrationForm) {
+  registrationForm.addEventListener('submit', handleRegistrationSubmit);
 }
 
-loadDashboard();
+setDefaultRegistrationDate();
+setKioskMode('checkin');
+setCheckinMode('pin');

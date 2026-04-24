@@ -8,7 +8,8 @@ This guide explains the move from the old JSON-based visitor store to the new SQ
 - Public registration now creates a pre-registration instead of immediate arrival
 - Reception check-in uses PIN, register number, or QR
 - Admin auth now uses session cookies
-- Legacy JSON routes still exist, but they are deprecated
+- Legacy JSON routes only remain for compatibility and tests
+- JSON is not mirrored by default; only enable `VISITOR_JSON_COMPAT_MODE=1` if you need temporary compatibility during a migration
 
 ## Migration steps
 
@@ -33,6 +34,8 @@ This guide explains the move from the old JSON-based visitor store to the new SQ
 - Inserts the legacy visitor records into SQLite
 - Leaves the old JSON file untouched as a backup snapshot
 
+The normal runtime does not keep `visitors.json` in sync with SQLite unless `VISITOR_JSON_COMPAT_MODE=1` is set.
+
 ## Legacy compatibility
 
 The following old routes are kept for compatibility and tests, but they are deprecated:
@@ -50,6 +53,8 @@ The following old routes are kept for compatibility and tests, but they are depr
 - `POST /api/admin/change-pin`
 - `PUT /api/admin/logo`
 - `GET /api/admin/security`
+
+The legacy admin config routes require an admin session. The old PIN-only admin login is removed; use `POST /api/admin/login` with username and password.
 
 ## New primary routes
 

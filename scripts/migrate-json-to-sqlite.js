@@ -5,6 +5,8 @@
  */
 
 const fs = require('fs').promises;
+const { assertNodeRuntime } = require('../src/utils/runtime');
+assertNodeRuntime();
 const config = require('../src/config/config');
 const VisitorRepository = require('../src/repositories/VisitorRepository');
 

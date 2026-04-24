@@ -1,5 +1,7 @@
 const express = require('express');
 const path = require('path');
+const { assertNodeRuntime } = require('./src/utils/runtime');
+assertNodeRuntime();
 const config = require('./src/config/config');
 const logger = require('./src/utils/logger');
 
@@ -17,6 +19,7 @@ const {
   errorHandler,
   notFoundHandler
 } = require('./src/middleware/errorHandler');
+const { requireAdminAuth } = require('./src/middleware/adminAuth');
 
 // Routes
 const visitorRoutes = require('./src/routes/visitorRoutes');
@@ -126,7 +129,7 @@ app.post('/api/check-out', async (req, res, next) => {
   }
 });
 
-app.get('/api/admin/stats', async (req, res, next) => {
+app.get('/api/admin/stats', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -141,11 +144,11 @@ app.get('/api/admin/stats', async (req, res, next) => {
   }
 });
 
-app.get('/api/admin/visitors/current', async (req, res, next) => {
+app.get('/api/admin/visitors/current', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
-      'Legacy current visitors endpoint. Use GET /api/reception/today or GET /api/admin/dashboard/today.',
+      'Legacy current visitors endpoint. Use GET /api/admin/dashboard/today.',
       '/api/admin/dashboard/today'
     );
     const VisitorController = require('./src/controllers/VisitorController');
@@ -156,7 +159,7 @@ app.get('/api/admin/visitors/current', async (req, res, next) => {
   }
 });
 
-app.get('/api/admin/visitors/history', async (req, res, next) => {
+app.get('/api/admin/visitors/history', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -171,7 +174,7 @@ app.get('/api/admin/visitors/history', async (req, res, next) => {
   }
 });
 
-app.post('/api/admin/clear-visitors', async (req, res, next) => {
+app.post('/api/admin/clear-visitors', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -186,7 +189,7 @@ app.post('/api/admin/clear-visitors', async (req, res, next) => {
   }
 });
 
-app.post('/api/admin/generate-test-visitors', async (req, res, next) => {
+app.post('/api/admin/generate-test-visitors', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -201,7 +204,7 @@ app.post('/api/admin/generate-test-visitors', async (req, res, next) => {
   }
 });
 
-app.post('/api/admin/anonymize', async (req, res, next) => {
+app.post('/api/admin/anonymize', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -226,7 +229,7 @@ app.get('/api/welcome-message', async (req, res, next) => {
   }
 });
 
-app.get('/api/admin/config', async (req, res, next) => {
+app.get('/api/admin/config', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -241,7 +244,7 @@ app.get('/api/admin/config', async (req, res, next) => {
   }
 });
 
-app.post('/api/admin/config', async (req, res, next) => {
+app.post('/api/admin/config', requireAdminAuth, async (req, res, next) => {
   try {
     setLegacyRouteHeaders(
       res,
@@ -257,16 +260,6 @@ app.post('/api/admin/config', async (req, res, next) => {
 });
 
 // Legacy PIN change handled by configRoutes.js
-
-app.post('/api/admin/login', async (req, res, next) => {
-  try {
-    const ConfigController = require('./src/controllers/ConfigController');
-    const controller = new ConfigController();
-    await controller.login(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
 
 /**
  * Health check endpoint

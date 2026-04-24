@@ -1,5 +1,4 @@
 const config = require('../config/config');
-const ConfigRepository = require('../repositories/ConfigRepository');
 const AdminUserRepository = require('../repositories/AdminUserRepository');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
@@ -48,40 +47,21 @@ function buildSessionPayload(session) {
 class AuthService {
   constructor(options = {}) {
     this.adminUserRepository = options.adminUserRepository || new AdminUserRepository();
-    this.configRepository = options.configRepository || new ConfigRepository();
   }
 
   async login(credentials = {}) {
     try {
       const username = toNullableString(credentials.username || credentials.user);
       const password = toNullableString(credentials.password);
-      const pin = toNullableString(credentials.pin);
+      if (!username || !password) {
+        throw new AppError('Identifiants administrateur requis', 400);
+      }
 
-      let user = null;
-      let authMode = null;
+      const user = this.adminUserRepository.authenticateWithPassword(username, password);
+      const authMode = 'password';
 
-      if (username || password) {
-        if (!username || !password) {
-          throw new AppError('Identifiants administrateur requis', 400);
-        }
-
-        user = this.adminUserRepository.authenticateWithPassword(username, password);
-        authMode = 'password';
-
-        if (!user) {
-          throw new AppError('Identifiants administrateur invalides', 401);
-        }
-      } else if (pin) {
-        const isValidPin = await this.configRepository.verifyPin(pin);
-        authMode = 'pin';
-
-        if (!isValidPin) {
-          throw new AppError('Code PIN incorrect', 401);
-        }
-
-        user = this.adminUserRepository.ensureDefaultAdmin();
-      } else {
-        throw new AppError('Le code PIN est requis', 400);
+      if (!user) {
+        throw new AppError('Identifiants administrateur invalides', 401);
       }
 
       const session = this.adminUserRepository.createSession(user.id);

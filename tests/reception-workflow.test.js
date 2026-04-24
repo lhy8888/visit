@@ -1,8 +1,6 @@
 const request = require('supertest');
 const path = require('path');
 const fs = require('fs').promises;
-const { closeDatabase } = require('../src/db/sqlite');
-const { normalizeDateOnly } = require('../src/utils/registerNo');
 
 process.env.NODE_ENV = 'test';
 
@@ -12,20 +10,26 @@ process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
 process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
+const { closeDatabase } = require('../src/db/sqlite');
+const VisitorRepository = require('../src/repositories/VisitorRepository');
+const { normalizeDateOnly } = require('../src/utils/registerNo');
 const app = require('../server');
 
 describe('Reception workflow', () => {
   const todayKey = normalizeDateOnly(new Date());
   const tomorrowKey = normalizeDateOnly(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  let visitorRepo;
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
   });
 
   beforeEach(async () => {
-    await request(app)
-      .post('/api/admin/clear-visitors')
-      .send({});
+    visitorRepo = new VisitorRepository({
+      dbPath: process.env.DB_FILE,
+      legacyFilePath: null
+    });
+    await visitorRepo.deleteAll();
   });
 
   afterAll(async () => {
@@ -54,7 +58,7 @@ describe('Reception workflow', () => {
       .get('/reception')
       .expect(200);
 
-    expect(response.text).toContain('Check-in command centre');
+    expect(response.text).toContain('Visitor kiosk');
   });
 
   test('shows today waiting and future registrations', async () => {

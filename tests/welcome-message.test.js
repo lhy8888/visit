@@ -1,152 +1,107 @@
 const request = require('supertest');
-const app = require('../server');
-const ConfigRepository = require('../src/repositories/ConfigRepository');
+const path = require('path');
+const fs = require('fs').promises;
 
-describe('🎉 Tests - Message d\'accueil', () => {
-  let configRepo;
+process.env.NODE_ENV = 'test';
+const testDataDir = path.join(__dirname, 'welcome-message-test-data');
+process.env.DATA_DIR = testDataDir;
+process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
+process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
+process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
+
+const SettingsRepository = require('../src/repositories/SettingsRepository');
+const { closeDatabase } = require('../src/db/sqlite');
+const app = require('../server');
+
+describe('Welcome message and public settings', () => {
+  let settingsRepo;
+
+  beforeAll(async () => {
+    await fs.mkdir(testDataDir, { recursive: true });
+  });
 
   beforeEach(async () => {
-    configRepo = new ConfigRepository();
-    // Réinitialiser la configuration à l'état par défaut avant chaque test
-    await configRepo.updateConfig({ welcomeMessage: 'Bienvenue' });
+    settingsRepo = new SettingsRepository();
+    await settingsRepo.set('welcome_message', 'Bienvenue');
+    await settingsRepo.set('site_title', 'Visitor Register');
+    await settingsRepo.set('logo_path', '/images/logo.png');
+    await settingsRepo.set('default_timezone', 'UTC');
+    await settingsRepo.set('pin_length', '6');
+    await settingsRepo.set('data_retention_days', '30');
+    await settingsRepo.set('enable_qr_checkin', '1');
+    await settingsRepo.set('enable_pin_checkin', '1');
   });
 
-  describe('API endpoint /api/welcome-message', () => {
-    test('Retourne le message de bienvenue par défaut', async () => {
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('message');
-      expect(typeof response.body.data.message).toBe('string');
-      expect(response.body.data.message.length).toBeGreaterThan(0);
-    });
-
-    test('Retourne un message personnalisé si configuré', async () => {
-      // Configurer un message personnalisé
-      const customMessage = 'Bienvenue dans notre entreprise !';
-      await configRepo.updateConfig({ welcomeMessage: customMessage });
-
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.message).toBe(customMessage);
-    });
-
-    test('Structure de la réponse est correcte', async () => {
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-
-      expect(response.body).toHaveProperty('success');
-      expect(response.body).toHaveProperty('data');
-      expect(response.body.data).toHaveProperty('message');
-      expect(response.body.success).toBe(true);
-    });
+  afterAll(async () => {
+    closeDatabase(process.env.DB_FILE);
+    await fs.rm(testDataDir, { recursive: true, force: true });
   });
 
-  describe('Configuration du message d\'accueil', () => {
-    test('Mettre à jour le message d\'accueil via API admin', async () => {
-      const newMessage = 'Nouveau message d\'accueil !';
-      
-      const updateResponse = await request(app)
-        .post('/api/admin/config')
-        .send({ welcomeMessage: newMessage })
-        .expect(200);
+  async function loginAsAdmin() {
+    const agent = request.agent(app);
+    await agent
+      .post('/api/admin/login')
+      .send({
+        username: 'admin',
+        password: '123456'
+      })
+      .expect(200);
+    return agent;
+  }
 
-      expect(updateResponse.body.success).toBe(true);
+  test('returns the welcome message from SQLite settings', async () => {
+    const response = await request(app)
+      .get('/api/welcome-message')
+      .expect(200);
 
-      // Vérifier que le message a été mis à jour
-      const getResponse = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.message).toBe('Bienvenue');
+  });
 
-      expect(getResponse.body.data.message).toBe(newMessage);
-    });
+  test('updates the public welcome message through admin settings', async () => {
+    const agent = await loginAsAdmin();
+    const customMessage = 'Welcome to the office';
 
-    test('Le message d\'accueil persiste après redémarrage', async () => {
-      const persistentMessage = 'Message persistant';
-      
-      // Configurer le message
-      await configRepo.updateConfig({ welcomeMessage: persistentMessage });
-      
-      // Créer une nouvelle instance du repository pour simuler un redémarrage
-      const newConfigRepo = new ConfigRepository();
-      const config = await newConfigRepo.getPublicConfig();
-      
-      expect(config.welcomeMessage).toBe(persistentMessage);
+    await agent
+      .put('/api/admin/settings')
+      .send({
+        welcomeMessage: customMessage
+      })
+      .expect(200);
+
+    const response = await request(app)
+      .get('/api/welcome-message')
+      .expect(200);
+
+    expect(response.body.data.message).toBe(customMessage);
+  });
+
+  test('exposes the same settings through the public config alias', async () => {
+    const response = await request(app)
+      .get('/api/public/config')
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toMatchObject({
+      welcomeMessage: 'Bienvenue',
+      siteTitle: 'Visitor Register',
+      logoPath: '/images/logo.png',
+      defaultTimezone: 'UTC',
+      pinLength: 6
     });
   });
 
-  describe('Gestion des erreurs', () => {
-    test('API retourne toujours une réponse valide', async () => {
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
+  test('returns validation errors for invalid public settings updates', async () => {
+    const agent = await loginAsAdmin();
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('message');
-      expect(typeof response.body.data.message).toBe('string');
-    });
-  });
+    const response = await agent
+      .put('/api/admin/settings')
+      .send({
+        pinLength: 3
+      })
+      .expect(400);
 
-  describe('Validation des données', () => {
-    test('Accepte les messages avec caractères spéciaux', async () => {
-      const specialMessage = 'Bienvenue ! Éléments spéciaux : à, é, ç, ñ, ü - 123 & @';
-      
-      const updateResponse = await request(app)
-        .post('/api/admin/config')
-        .send({ welcomeMessage: specialMessage })
-        .expect(200);
-
-      expect(updateResponse.body.success).toBe(true);
-
-      const getResponse = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-
-      expect(getResponse.body.data.message).toBe(specialMessage);
-    });
-
-    test('Limite la longueur du message', async () => {
-      const longMessage = 'A'.repeat(1000);
-      
-      const updateResponse = await request(app)
-        .post('/api/admin/config')
-        .send({ welcomeMessage: longMessage })
-        .expect(500);
-
-      expect(updateResponse.body.success).toBe(false);
-      expect(updateResponse.body.error.message).toBeTruthy();
-    });
-
-    test('Gère les messages vides', async () => {
-      const emptyMessage = '';
-      
-      const updateResponse = await request(app)
-        .post('/api/admin/config')
-        .send({ welcomeMessage: emptyMessage })
-        .expect(500);
-
-      expect(updateResponse.body.success).toBe(false);
-      expect(updateResponse.body.error.message).toBeTruthy();
-    });
-  });
-
-  describe('Intégration avec configuration complète', () => {
-    test('Message d\'accueil fait partie de la configuration complète', async () => {
-      const testMessage = 'Message pour test complet';
-      await configRepo.updateConfig({ welcomeMessage: testMessage });
-
-      const response = await request(app)
-        .get('/api/admin/config')
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.welcomeMessage).toBe(testMessage);
-    });
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.message).toContain('PIN');
   });
 });

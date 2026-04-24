@@ -1,59 +1,83 @@
 const ConfigRepository = require('../repositories/ConfigRepository');
+const SettingsRepository = require('../repositories/SettingsRepository');
 const Config = require('../models/Config');
+const config = require('../config/config');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const { DEFAULT_TIME_ZONE } = require('../utils/registerNo');
 
-/**
- * Service pour la gestion de la configuration
- */
+function toBooleanSetting(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  const normalized = String(value || '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on'].includes(normalized);
+}
+
+function toNumericSetting(value, fallback = null) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function normalizePublicSettings(rawSettings = {}) {
+  return {
+    siteTitle: rawSettings.site_title || rawSettings.siteTitle || 'Visitor Register',
+    welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || 'Bienvenue dans notre entreprise',
+    logoPath: rawSettings.logo_path || rawSettings.logoPath || '/images/logo.png',
+    defaultTimezone: rawSettings.default_timezone || rawSettings.defaultTimezone || DEFAULT_TIME_ZONE,
+    pinLength: toNumericSetting(rawSettings.pin_length || rawSettings.pinLength, 6),
+    dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 30),
+    enableQrCheckin: toBooleanSetting(rawSettings.enable_qr_checkin ?? rawSettings.enableQrCheckin ?? true),
+    enablePinCheckin: toBooleanSetting(rawSettings.enable_pin_checkin ?? rawSettings.enablePinCheckin ?? true)
+  };
+}
+
 class ConfigService {
   constructor() {
     this.configRepository = new ConfigRepository();
+    this.settingsRepository = new SettingsRepository();
   }
 
-  /**
-   * Obtenir la configuration publique
-   */
   async getPublicConfig() {
     try {
-      return await this.configRepository.getPublicConfig();
+      const rawSettings = await this.settingsRepository.getAll();
+      return normalizePublicSettings(rawSettings);
     } catch (error) {
-      logger.error('Erreur lors de la récupération de la configuration publique', {
+      logger.error('Erreur lors de la recuperation de la configuration publique', {
         error: error.message
       });
       throw error;
     }
   }
 
-  /**
-   * Obtenir la configuration complète (admin uniquement)
-   */
   async getFullConfig() {
     try {
       return await this.configRepository.getConfig();
     } catch (error) {
-      logger.error('Erreur lors de la récupération de la configuration complète', {
+      logger.error('Erreur lors de la recuperation de la configuration complete', {
         error: error.message
       });
       throw error;
     }
   }
 
-  /**
-   * Mettre à jour la configuration
-   */
   async updateConfig(updates) {
     try {
       const updatedConfig = await this.configRepository.updateConfig(updates);
-      
-      logger.info('Configuration mise à jour avec succès', {
+
+      logger.info('Configuration mise a jour avec succes', {
         updates: Object.keys(updates),
         timestamp: new Date().toISOString()
       });
 
       return updatedConfig.getPublicConfig();
     } catch (error) {
-      logger.error('Erreur lors de la mise à jour de la configuration', {
+      logger.error('Erreur lors de la mise a jour de la configuration', {
         error: error.message,
         updates
       });
@@ -61,9 +85,6 @@ class ConfigService {
     }
   }
 
-  /**
-   * Authentifier un utilisateur avec le code PIN
-   */
   async authenticatePin(pin) {
     try {
       if (!pin) {
@@ -71,18 +92,18 @@ class ConfigService {
       }
 
       const isValid = await this.configRepository.verifyPin(pin);
-      
+
       if (!isValid) {
         throw new AppError('Code PIN incorrect', 401);
       }
 
-      logger.info('Authentification PIN réussie', {
+      logger.info('Authentification PIN reussie', {
         timestamp: new Date().toISOString()
       });
 
       return { success: true, authenticated: true };
     } catch (error) {
-      logger.warn('Échec de l\'authentification PIN', {
+      logger.warn('Echec de l\'authentification PIN', {
         error: error.message,
         timestamp: new Date().toISOString()
       });
@@ -90,30 +111,24 @@ class ConfigService {
     }
   }
 
-  /**
-   * Changer le code PIN
-   */
   async changePin(newPin, currentPin = null) {
     try {
       if (!newPin) {
         throw new AppError('Le nouveau code PIN est requis', 400);
       }
 
-      // Normaliser le PIN: convertir en string et valider
       const normalizedPin = this._normalizePin(newPin);
-      
-      // Valider le PIN normalisé
       this._validatePin(normalizedPin);
 
       const updatedConfig = await this.configRepository.changePin(normalizedPin, currentPin);
-      
-      logger.info('Code PIN changé avec succès', {
+
+      logger.info('Code PIN change avec succes', {
         timestamp: new Date().toISOString()
       });
 
-      return { 
-        success: true, 
-        message: 'Code PIN mis à jour avec succès',
+      return {
+        success: true,
+        message: 'Code PIN mis a jour avec succes',
         requirePinChange: updatedConfig.requirePinChange
       };
     } catch (error) {
@@ -125,48 +140,32 @@ class ConfigService {
     }
   }
 
-  /**
-   * Normalise un PIN en retirant les espaces et en convertissant en string
-   */
   _normalizePin(pin) {
     if (pin === null || pin === undefined) {
-      throw new AppError('Le code PIN ne peut pas être vide', 400);
+      throw new AppError('Le code PIN ne peut pas etre vide', 400);
     }
-    
-    // Convertir en string et nettoyer
+
     let normalized = String(pin).trim();
-    
-    // Retirer tous les espaces
     normalized = normalized.replace(/\s/g, '');
-    
     return normalized;
   }
 
-  /**
-   * Valide un PIN normalisé
-   */
   _validatePin(pin) {
-    // Vérifier que ce n'est pas vide après normalisation
     if (!pin || pin.length === 0) {
-      throw new AppError('Le code PIN ne peut pas être vide', 400);
+      throw new AppError('Le code PIN ne peut pas etre vide', 400);
     }
-    
-    // Vérifier la longueur (4 à 6 caractères)
+
     if (pin.length < 4 || pin.length > 6) {
       throw new AppError('Le code PIN doit contenir entre 4 et 6 chiffres', 400);
     }
-    
-    // Vérifier que ce sont uniquement des chiffres
+
     if (!/^\d+$/.test(pin)) {
       throw new AppError('Le code PIN ne peut contenir que des chiffres', 400);
     }
-    
+
     return true;
   }
 
-  /**
-   * Mettre à jour le logo
-   */
   async updateLogo(logoPath) {
     try {
       if (!logoPath) {
@@ -174,15 +173,15 @@ class ConfigService {
       }
 
       const updatedConfig = await this.configRepository.updateLogoPath(logoPath);
-      
-      logger.info('Logo mis à jour avec succès', {
+
+      logger.info('Logo mis a jour avec succes', {
         logoPath,
         timestamp: new Date().toISOString()
       });
 
       return updatedConfig.getPublicConfig();
     } catch (error) {
-      logger.error('Erreur lors de la mise à jour du logo', {
+      logger.error('Erreur lors de la mise a jour du logo', {
         error: error.message,
         logoPath
       });
@@ -190,69 +189,61 @@ class ConfigService {
     }
   }
 
-  /**
-   * Obtenir le message de bienvenue
-   */
   async getWelcomeMessage() {
     try {
-      const config = await this.configRepository.getPublicConfig();
-      return { message: config.welcomeMessage || 'Bienvenue' };
+      const configSnapshot = normalizePublicSettings(await this.settingsRepository.getAll());
+      return { message: configSnapshot.welcomeMessage || 'Bienvenue' };
     } catch (error) {
-      logger.error('Erreur lors de la récupération du message de bienvenue', {
+      logger.error('Erreur lors de la recuperation du message de bienvenue', {
         error: error.message
       });
       throw error;
     }
   }
 
-  /**
-   * Réinitialiser la configuration
-   */
   async resetConfig() {
     try {
       const defaultConfig = await this.configRepository.resetToDefaults();
-      
-      logger.warn('Configuration réinitialisée aux valeurs par défaut', {
+
+      logger.warn('Configuration reinitialisee aux valeurs par defaut', {
         timestamp: new Date().toISOString()
       });
 
       return defaultConfig.getPublicConfig();
     } catch (error) {
-      logger.error('Erreur lors de la réinitialisation de la configuration', {
+      logger.error('Erreur lors de la reinitialisation de la configuration', {
         error: error.message
       });
       throw error;
     }
   }
 
-  /**
-   * Valider les paramètres de configuration
-   */
   validateConfigUpdate(updates) {
     const { error, value } = Config.validateConfig(updates);
     if (error) {
       throw new AppError(
-        `Configuration invalide: ${error.details.map(d => d.message).join(', ')}`,
+        `Configuration invalide: ${error.details.map((d) => d.message).join(', ')}`,
         400
       );
     }
+
     return value;
   }
 
-  /**
-   * Obtenir les paramètres de sécurité
-   */
   async getSecuritySettings() {
     try {
-      const config = await this.configRepository.getConfig();
-      
+      const configSnapshot = normalizePublicSettings(await this.settingsRepository.getAll());
+
       return {
-        requirePinChange: config.requirePinChange,
-        anonymizationDays: config.anonymizationDays,
-        maxFileSize: config.maxFileSize
+        requirePinChange: false,
+        anonymizationDays: configSnapshot.dataRetentionDays,
+        maxFileSize: config.MAX_FILE_SIZE,
+        pinLength: configSnapshot.pinLength,
+        enableQrCheckin: configSnapshot.enableQrCheckin,
+        enablePinCheckin: configSnapshot.enablePinCheckin
       };
     } catch (error) {
-      logger.error('Erreur lors de la récupération des paramètres de sécurité', {
+      logger.error('Erreur lors de la recuperation des parametres de securite', {
         error: error.message
       });
       throw error;

@@ -22,6 +22,7 @@ Lightweight office visitor system for a small office of about 100 people.
 
 ## Quick start
 
+1. Install Node.js `22.13.0` or newer.
 1. Install dependencies:
    ```bash
    npm install
@@ -39,12 +40,14 @@ Default admin credentials:
 
 - Username: `admin`
 - Password: `123456`
+- Admin login uses username/password only. The old PIN-only admin login is no longer supported.
 
 ## Data files
 
 - `data/visitor.db` is the SQLite database
-- `data/config.json` stores application settings
+- `data/config.json` is legacy compatibility storage for deprecated admin config routes
 - `data/visitors.json` is only used for legacy import or backup
+- Set `VISITOR_JSON_COMPAT_MODE=1` only if you need temporary JSON mirroring during a migration. The default runtime does not mirror JSON.
 
 ## Migration from JSON
 
@@ -102,6 +105,8 @@ These routes still work, but they are deprecated:
 - `POST /api/admin/change-pin`
 - `PUT /api/admin/logo`
 - `GET /api/admin/security`
+
+The legacy admin config routes require a valid admin session and should not be used in new code. The new supported admin control surface is `GET /api/admin/settings` and `PUT /api/admin/settings`.
 
 ## Development
 

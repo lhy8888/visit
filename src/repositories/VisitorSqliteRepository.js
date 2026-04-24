@@ -228,6 +228,9 @@ class VisitorSqliteRepository {
     this.legacyFilePath = Object.prototype.hasOwnProperty.call(options, 'legacyFilePath')
       ? options.legacyFilePath
       : config.VISITORS_FILE;
+    this.legacyCompatMode = Object.prototype.hasOwnProperty.call(options, 'legacyCompatMode')
+      ? Boolean(options.legacyCompatMode)
+      : Boolean(config.VISITOR_JSON_COMPAT_MODE);
     this.db = openDatabase(this.dbPath, options.migrationsDir);
     this.upsertStatement = this.db.prepare(VISITOR_UPSERT_SQL);
     this.findAllStatement = this.db.prepare('SELECT * FROM visitors ORDER BY created_at ASC, id ASC');
@@ -258,7 +261,7 @@ class VisitorSqliteRepository {
   }
 
   async _ensureLegacyDirectory() {
-    if (!this.legacyFilePath || this.legacyFilePath === ':memory:') {
+    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
       return;
     }
 
@@ -266,7 +269,7 @@ class VisitorSqliteRepository {
   }
 
   async _getLegacySnapshotMtime() {
-    if (!this.legacyFilePath || this.legacyFilePath === ':memory:') {
+    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
       return 0;
     }
 
@@ -283,7 +286,7 @@ class VisitorSqliteRepository {
   }
 
   async _readLegacySnapshot() {
-    if (!this.legacyFilePath || this.legacyFilePath === ':memory:') {
+    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
       return [];
     }
 
@@ -316,7 +319,7 @@ class VisitorSqliteRepository {
   }
 
   async _writeLegacySnapshot(rows) {
-    if (!this.legacyFilePath || this.legacyFilePath === ':memory:') {
+    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
       return;
     }
 
@@ -328,7 +331,7 @@ class VisitorSqliteRepository {
   }
 
   async _syncFromLegacySnapshotIfNeeded() {
-    if (!this.legacyFilePath || this.legacyFilePath === ':memory:') {
+    if (!this.legacyCompatMode || !this.legacyFilePath || this.legacyFilePath === ':memory:') {
       return;
     }
 

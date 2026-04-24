@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { assertNodeRuntime } = require('../utils/runtime');
+
+assertNodeRuntime();
 const { DatabaseSync } = require('node:sqlite');
 const config = require('../config/config');
 const logger = require('../utils/logger');

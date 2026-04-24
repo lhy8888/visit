@@ -1,7 +1,6 @@
 const request = require('supertest');
 const path = require('path');
 const fs = require('fs').promises;
-const { closeDatabase } = require('../src/db/sqlite');
 
 process.env.NODE_ENV = 'test';
 
@@ -11,17 +10,23 @@ process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
 process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
+const { closeDatabase } = require('../src/db/sqlite');
+const VisitorRepository = require('../src/repositories/VisitorRepository');
 const app = require('../server');
 
 describe('Registration workflow', () => {
+  let visitorRepo;
+
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
   });
 
   beforeEach(async () => {
-    await request(app)
-      .post('/api/admin/clear-visitors')
-      .send({});
+    visitorRepo = new VisitorRepository({
+      dbPath: process.env.DB_FILE,
+      legacyFilePath: null
+    });
+    await visitorRepo.deleteAll();
   });
 
   afterAll(async () => {
@@ -71,10 +76,11 @@ describe('Registration workflow', () => {
   });
 
   test('keeps registered visitors out of the current list', async () => {
+    const todayKey = new Date().toISOString().slice(0, 10);
     const payload = {
       visitor_name: 'Pending Visitor',
       host_name: 'Reception',
-      scheduled_date: '2026-04-23'
+      scheduled_date: todayKey
     };
 
     const createResponse = await request(app)
@@ -83,10 +89,13 @@ describe('Registration workflow', () => {
       .expect(201);
 
     const currentResponse = await request(app)
-      .get('/api/admin/visitors/current')
+      .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
       .expect(200);
 
-    expect(currentResponse.body.data).toHaveLength(0);
+    expect(currentResponse.body.data.date).toBe(todayKey);
+    expect(currentResponse.body.data).toHaveProperty('pending');
+    expect(currentResponse.body.data.pending).toHaveLength(1);
+    expect(currentResponse.body.data.checkedIn).toHaveLength(0);
 
     const allVisitorsResponse = await request(app)
       .get('/api/visitors')

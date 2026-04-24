@@ -1,6 +1,14 @@
 const path = require('path');
 require('dotenv').config();
 
+function parseBooleanEnv(value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
 /**
  * Configuration centralisée de l'application
  */
@@ -15,6 +23,7 @@ module.exports = {
   CONFIG_FILE: path.resolve(process.env.CONFIG_FILE || './data/config.json'),
   DB_FILE: path.resolve(process.env.DB_FILE || './data/visitor.db'),
   UPLOAD_DIR: path.resolve(process.env.UPLOAD_DIR || './public/images'),
+  VISITOR_JSON_COMPAT_MODE: parseBooleanEnv(process.env.VISITOR_JSON_COMPAT_MODE, false),
   
   // Sécurité
   DEFAULT_PIN_HASH: process.env.DEFAULT_PIN_HASH || '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',

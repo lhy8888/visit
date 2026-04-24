@@ -4,7 +4,7 @@ This project runs as a simple Node app with a local SQLite database.
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 22.13.0 or newer
 - npm
 - A modern browser
 
@@ -32,6 +32,7 @@ Open:
 
 - Username: `admin`
 - Password: `123456`
+- Admin login is session-based and uses username/password only.
 
 Change this password after the first login.
 
@@ -52,4 +53,5 @@ npm run migrate:json-to-sqlite
 ## Notes
 
 - The app stores its main data in `data/visitor.db`
+- `data/visitors.json` is migration/backup only unless `VISITOR_JSON_COMPAT_MODE=1`
 - No external database server or Docker setup is required

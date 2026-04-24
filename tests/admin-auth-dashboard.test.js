@@ -2,8 +2,6 @@ const request = require('supertest');
 const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
-const { closeDatabase } = require('../src/db/sqlite');
-const { normalizeDateOnly } = require('../src/utils/registerNo');
 
 process.env.NODE_ENV = 'test';
 
@@ -13,11 +11,15 @@ process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
 process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
+const VisitorRepository = require('../src/repositories/VisitorRepository');
+const { closeDatabase } = require('../src/db/sqlite');
+const { normalizeDateOnly } = require('../src/utils/registerNo');
 const app = require('../server');
 
 describe('Admin authentication and dashboard', () => {
   const todayKey = normalizeDateOnly(new Date());
   const tomorrowKey = normalizeDateOnly(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  let visitorRepo;
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
@@ -32,9 +34,11 @@ describe('Admin authentication and dashboard', () => {
   });
 
   beforeEach(async () => {
-    await request(app)
-      .post('/api/admin/clear-visitors')
-      .send({});
+    visitorRepo = new VisitorRepository({
+      dbPath: process.env.DB_FILE,
+      legacyFilePath: null
+    });
+    await visitorRepo.deleteAll();
   });
 
   afterAll(async () => {

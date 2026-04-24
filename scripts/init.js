@@ -7,6 +7,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { assertNodeRuntime } = require('../src/utils/runtime');
+
+assertNodeRuntime();
 const { openDatabase, closeDatabase } = require('../src/db/sqlite');
 const AdminUserRepository = require('../src/repositories/AdminUserRepository');
 
@@ -64,8 +67,8 @@ try {
   ensureDirectoryExists(logsDir, 'Logs folder');
   ensureDirectoryExists(imagesDir, 'Images folder');
 
-  console.log('\nCopying sample files...');
-  copyExampleFile(configExample, configFile, 'Main configuration');
+  console.log('\nCopying legacy sample files...');
+  copyExampleFile(configExample, configFile, 'Legacy configuration snapshot');
   copyExampleFile(visitorsExample, visitorsFile, 'Legacy visitors snapshot');
 
   console.log('\nInitialising SQLite database...');
@@ -80,12 +83,12 @@ try {
 
   console.log('\nInitialization complete.');
   console.log('\nNext steps:');
-  console.log('1. Edit data/config.json');
+  console.log('1. Review settings in the admin panel at /admin');
   console.log('2. Add your logo to public/images/logo.png');
   console.log('3. SQLite database visitor.db is ready in data/');
   console.log('4. Start the app with npm start');
   console.log('5. Default admin account: admin / 123456');
-  console.log('6. You can still change the legacy PIN in admin settings');
+  console.log('6. data/config.json and data/visitors.json are legacy compatibility files');
 } catch (error) {
   console.error('Initialization failed:', error.message);
   process.exit(1);

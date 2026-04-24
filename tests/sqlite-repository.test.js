@@ -21,22 +21,29 @@ describe('SQLite VisitorRepository', () => {
     }
   });
 
-  beforeEach(async () => {
+  afterEach(async () => {
+    if (dbPath) {
+      closeDatabase(dbPath);
+    }
+
+    if (dbPath) {
+      await fs.rm(dbPath, { force: true }).catch(() => {});
+    }
+
+    if (legacyPath) {
+      await fs.rm(legacyPath, { force: true }).catch(() => {});
+    }
+  });
+
+  test('uses SQLite only by default', async () => {
     dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
     legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+
     repository = new VisitorRepository({
       dbPath,
       legacyFilePath: legacyPath
     });
-  });
 
-  afterEach(async () => {
-    closeDatabase(dbPath);
-    await fs.rm(dbPath, { force: true }).catch(() => {});
-    await fs.rm(legacyPath, { force: true }).catch(() => {});
-  });
-
-  test('creates a visitor and mirrors to legacy JSON', async () => {
     const created = await repository.create({
       nom: 'Martin',
       prenom: 'Jean',
@@ -49,39 +56,74 @@ describe('SQLite VisitorRepository', () => {
     expect(created.id).toBeTruthy();
     expect(created.heureSortie).toBeNull();
 
-    const allVisitors = await repository.findAll();
-    expect(allVisitors).toHaveLength(1);
-    expect(allVisitors[0].email).toBe('jean.martin@example.com');
+    const visitors = await repository.findAll();
+    expect(visitors).toHaveLength(1);
+    expect(visitors[0].email).toBe('jean.martin@example.com');
 
-    const legacySnapshot = JSON.parse(await fs.readFile(legacyPath, 'utf8'));
-    expect(legacySnapshot).toHaveLength(1);
-    expect(legacySnapshot[0].nom).toBe('Martin');
+    await expect(fs.access(legacyPath)).rejects.toHaveProperty('code', 'ENOENT');
   });
 
-  test('syncs external legacy JSON changes before reading', async () => {
-    const legacyVisitors = [
+  test('can mirror and resync legacy JSON only in explicit compat mode', async () => {
+    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
+    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+
+    repository = new VisitorRepository({
+      dbPath,
+      legacyFilePath: legacyPath,
+      legacyCompatMode: true
+    });
+
+    const created = await repository.create({
+      nom: 'Legacy',
+      prenom: 'User',
+      societe: 'Old Corp',
+      email: 'legacy@example.com',
+      telephone: '0102030405',
+      personneVisitee: 'Front Desk'
+    });
+
+    expect(created.id).toBeTruthy();
+
+    const firstSnapshot = JSON.parse(await fs.readFile(legacyPath, 'utf8'));
+    expect(firstSnapshot).toHaveLength(1);
+    expect(firstSnapshot[0].nom).toBe('Legacy');
+
+    await fs.writeFile(legacyPath, JSON.stringify([
+      ...firstSnapshot,
       {
-        id: 'legacy-1',
-        nom: 'Legacy',
-        prenom: 'User',
-        societe: 'Old Corp',
-        email: 'legacy@example.com',
-        telephone: '0102030405',
-        personneVisitee: 'Front Desk',
+        id: 'legacy-2',
+        nom: 'Imported',
+        prenom: 'Guest',
+        societe: 'Compat Corp',
+        email: 'imported@example.com',
+        telephone: '0203040506',
+        personneVisitee: 'Lobby',
         heureArrivee: '2025-04-23T09:00:00.000Z',
         heureSortie: null
       }
-    ];
+    ], null, 2), 'utf8');
 
-    await fs.writeFile(legacyPath, JSON.stringify(legacyVisitors, null, 2), 'utf8');
+    closeDatabase(dbPath);
+    repository = new VisitorRepository({
+      dbPath,
+      legacyFilePath: legacyPath,
+      legacyCompatMode: true
+    });
 
     const visitors = await repository.findAll();
-    expect(visitors).toHaveLength(1);
-    expect(visitors[0].id).toBe('legacy-1');
-    expect(visitors[0].email).toBe('legacy@example.com');
+    expect(visitors).toHaveLength(2);
+    expect(visitors.find((visitor) => visitor.email === 'imported@example.com')).toBeTruthy();
   });
 
-  test('updates and check-outs a visitor', async () => {
+  test('updates and checks out a visitor in SQLite', async () => {
+    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
+    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+
+    repository = new VisitorRepository({
+      dbPath,
+      legacyFilePath: legacyPath
+    });
+
     const created = await repository.create({
       nom: 'Smith',
       prenom: 'Anna',
@@ -102,7 +144,15 @@ describe('SQLite VisitorRepository', () => {
     expect(byId.heureSortie).toBeTruthy();
   });
 
-  test('deletes all visitors', async () => {
+  test('deletes all visitors from SQLite', async () => {
+    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
+    legacyPath = path.join(testDir, `visitors-${Date.now()}-${Math.random().toString(16).slice(2)}.json`);
+
+    repository = new VisitorRepository({
+      dbPath,
+      legacyFilePath: legacyPath
+    });
+
     await repository.create({
       nom: 'One',
       prenom: 'Visitor',
@@ -114,8 +164,5 @@ describe('SQLite VisitorRepository', () => {
 
     const visitors = await repository.findAll();
     expect(visitors).toHaveLength(0);
-
-    const legacySnapshot = JSON.parse(await fs.readFile(legacyPath, 'utf8'));
-    expect(legacySnapshot).toHaveLength(0);
   });
 });

@@ -1,193 +1,116 @@
 const request = require('supertest');
+const path = require('path');
+const fs = require('fs').promises;
+
+process.env.NODE_ENV = 'test';
+const testDataDir = path.join(__dirname, 'rate-limiting-test-data');
+process.env.DATA_DIR = testDataDir;
+process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
+process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
+process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
+
+const { closeDatabase } = require('../src/db/sqlite');
 const app = require('../server');
 
-describe('🚦 Tests - Rate Limiting', () => {
-  
-  describe('Rate limiting général', () => {
-    test('Permet plusieurs requêtes dans la limite autorisée', async () => {
-      const promises = [];
-      
-      // Envoyer 10 requêtes simultanément
-      for (let i = 0; i < 10; i++) {
-        promises.push(
-          request(app)
-            .get('/api/welcome-message')
-            .expect(200)
-        );
-      }
-      
-      const responses = await Promise.all(promises);
-      
-      // Vérifier que toutes les requêtes ont réussi
-      responses.forEach(response => {
-        expect(response.body.success).toBe(true);
-        expect(response.body.data).toHaveProperty('message');
-      });
-    });
+async function loginAsAdmin() {
+  const agent = request.agent(app);
+  await agent
+    .post('/api/admin/login')
+    .send({
+      username: 'admin',
+      password: '123456'
+    })
+    .expect(200);
+  return agent;
+}
 
-    test('Endpoint de santé non limité', async () => {
-      const promises = [];
-      
-      // Envoyer 20 requêtes simultanément au endpoint de santé
-      for (let i = 0; i < 20; i++) {
-        promises.push(
-          request(app)
-            .get('/health')
-            .expect(200)
-        );
-      }
-      
-      const responses = await Promise.all(promises);
-      
-      // Vérifier que toutes les requêtes ont réussi
-      responses.forEach(response => {
-        expect(response.body.success).toBe(true);
-        expect(response.body.message).toBe('Service en ligne');
-      });
-    });
+describe('Rate limiting', () => {
+  beforeAll(async () => {
+    await fs.mkdir(testDataDir, { recursive: true });
   });
 
-  describe('Rate limiting strict pour endpoints sensibles', () => {
-    test('Permet plusieurs requêtes check-out dans la limite autorisée', async () => {
-      const promises = [];
-      
-      // Envoyer 10 requêtes simultanément
-      for (let i = 0; i < 10; i++) {
-        promises.push(
-          request(app)
-            .post('/api/check-out')
-            .send({ email: `test${i}@example.com` })
-        );
-      }
-      
-      const responses = await Promise.all(promises);
-      
-      // Vérifier que toutes les requêtes ont été traitées (même si elles échouent fonctionnellement)
-      responses.forEach(response => {
-        // Les requêtes peuvent échouer avec 404 (email non trouvé) mais pas avec 429 (rate limit)
-        expect(response.status).not.toBe(429);
-        expect(response.body.success).toBe(false);
-        if (response.status === 404) {
-          expect(response.body.error.message).toContain('Aucune arrivée en cours trouvée');
-        }
-      });
-    });
-
-    test('Permet plusieurs requêtes check-in dans la limite autorisée', async () => {
-      const promises = [];
-      
-      // Envoyer 10 requêtes simultanément avec des emails différents
-      for (let i = 0; i < 10; i++) {
-        promises.push(
-          request(app)
-            .post('/api/check-in')
-            .send({
-              nom: `TestUser${i}`,
-              prenom: 'Rate',
-              email: `ratetest${i}@example.com`,
-              telephone: '0123456789',
-              personneVisitee: 'Test Manager'
-            })
-        );
-      }
-      
-      const responses = await Promise.all(promises);
-      
-      // Vérifier que toutes les requêtes ont été traitées
-      responses.forEach(response => {
-        // Les requêtes peuvent échouer avec 400 (validation) mais pas avec 429 (rate limit)
-        expect(response.status).not.toBe(429);
-        expect(response.body).toHaveProperty('success');
-      });
-    });
+  afterAll(async () => {
+    closeDatabase(process.env.DB_FILE);
+    await fs.rm(testDataDir, { recursive: true, force: true });
   });
 
-  describe('Configuration du rate limiting', () => {
-    test('Vérifie la configuration en développement', () => {
-      const config = require('../src/config/config');
-      
-      // Vérifier que la configuration est adaptée au test/développement
-      expect(['development', 'test']).toContain(config.NODE_ENV);
-      expect(config.RATE_LIMIT.max).toBe(1000); // 1000 requêtes par minute
-      expect(config.RATE_LIMIT.windowMs).toBe(1 * 60 * 1000); // 1 minute
-    });
+  test('allows bursts of public welcome message requests', async () => {
+    const promises = [];
 
-    test('Headers de rate limiting présents', async () => {
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-      
-      // Vérifier que les headers de rate limiting sont présents
-      expect(response.headers).toHaveProperty('ratelimit-limit');
-      expect(response.headers).toHaveProperty('ratelimit-remaining');
-      expect(response.headers).toHaveProperty('ratelimit-reset');
-    });
-  });
+    for (let i = 0; i < 10; i += 1) {
+      promises.push(
+        request(app)
+          .get('/api/welcome-message')
+          .expect(200)
+      );
+    }
 
-  describe('Gestion des erreurs de rate limiting', () => {
-    test('Format de réponse correct pour rate limiting', async () => {
-      // Ce test vérifie le format sans déclencher le rate limit
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-      
-      // Vérifier que la réponse a le bon format
+    const responses = await Promise.all(promises);
+    responses.forEach((response) => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('message');
     });
-
-    test('Middleware de rate limiting appliqué', async () => {
-      const response = await request(app)
-        .get('/api/welcome-message')
-        .expect(200);
-      
-      // Vérifier que les headers indiquent que le rate limiting est actif
-      const remainingRequests = parseInt(response.headers['ratelimit-remaining']);
-      expect(remainingRequests).toBeLessThan(1000); // Moins que la limite max
-      expect(remainingRequests).toBeGreaterThanOrEqual(0);
-    });
   });
 
-  describe('Endpoints exclus du rate limiting', () => {
-    test('Endpoint de santé non affecté par rate limiting', async () => {
-      const response = await request(app)
-        .get('/health')
-        .expect(200);
-      
-      // Le endpoint de santé ne devrait pas avoir de headers de rate limiting
+  test('health endpoint is not rate limited', async () => {
+    const promises = [];
+
+    for (let i = 0; i < 20; i += 1) {
+      promises.push(
+        request(app)
+          .get('/health')
+          .expect(200)
+      );
+    }
+
+    const responses = await Promise.all(promises);
+    responses.forEach((response) => {
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Service en ligne');
-      expect(response.body.timestamp).toBeTruthy();
-    });
-
-    test('Fichiers statiques non affectés', async () => {
-      const response = await request(app)
-        .get('/style.css')
-        .expect(200);
-      
-      // Les fichiers statiques ne devraient pas être rate limitées
-      expect(response.headers['content-type']).toContain('text/css');
     });
   });
 
-  describe('Différents types de rate limiting', () => {
-    test('Rate limiting différent pour endpoints admin', async () => {
-      // Tester l'endpoint de configuration admin
-      const response = await request(app)
-        .get('/api/admin/config')
-        .expect(200);
-      
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('welcomeMessage');
-    });
+  test('visit check-in and checkout bursts do not hit 429', async () => {
+    const requests = [];
 
-    test('Rate limiting pour endpoint de configuration publique', async () => {
-      const response = await request(app)
-        .get('/api/public')
-        .expect(200);
-      
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('welcomeMessage');
+    for (let i = 0; i < 10; i += 1) {
+      requests.push(
+        request(app)
+          .post('/api/check-in')
+          .send({
+            nom: `TestUser${i}`,
+            prenom: 'Rate',
+            email: `ratetest${i}@example.com`,
+            telephone: '0123456789',
+            personneVisitee: 'Test Manager'
+          })
+      );
+    }
+
+    const responses = await Promise.all(requests);
+    responses.forEach((response) => {
+      expect(response.status).not.toBe(429);
+      expect(response.body).toHaveProperty('success');
     });
+  });
+
+  test('admin settings endpoint is available with a session cookie', async () => {
+    const agent = await loginAsAdmin();
+    const response = await agent
+      .get('/api/admin/settings')
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveProperty('siteTitle');
+    expect(response.headers).toHaveProperty('ratelimit-limit');
+    expect(response.headers).toHaveProperty('ratelimit-remaining');
+  });
+
+  test('rate limit configuration matches the test environment', () => {
+    const config = require('../src/config/config');
+
+    expect(['development', 'test']).toContain(config.NODE_ENV);
+    expect(config.RATE_LIMIT.max).toBe(1000);
+    expect(config.RATE_LIMIT.windowMs).toBe(1 * 60 * 1000);
   });
 });

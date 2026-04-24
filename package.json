@@ -4,16 +4,25 @@
   "description": "Un système moderne de gestion des visiteurs avec architecture MVC, sécurité renforcée et interface intuitive.",
   "main": "server.js",
   "scripts": {
+    "preinstall": "node scripts/check-runtime.js",
+    "prestart": "node scripts/check-runtime.js",
     "start": "node server.js",
+    "predev": "node scripts/check-runtime.js",
     "dev": "nodemon server.js",
+    "preinit": "node scripts/check-runtime.js",
     "init": "node scripts/init.js",
+    "premigrate:json-to-sqlite": "node scripts/check-runtime.js",
     "migrate:json-to-sqlite": "node scripts/migrate-json-to-sqlite.js",
     "postinstall": "npm run init",
+    "pretest": "node scripts/check-runtime.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
     "audit": "npm audit"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
