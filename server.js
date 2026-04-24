@@ -26,12 +26,22 @@ const receptionRoutes = require('./src/routes/receptionRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 
 /**
- * Création de l'application Express
+ * Creation of the Express application
  */
 const app = express();
 
+const setLegacyRouteHeaders = (res, message, replacement) => {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('X-Deprecated-Endpoint', 'true');
+  res.setHeader('X-Deprecated-Message', message);
+
+  if (replacement) {
+    res.setHeader('Link', `<${replacement}>; rel="alternate"`);
+  }
+};
+
 /**
- * Configuration des middlewares de sécurité
+ * Security middleware
  */
 app.use(helmet);
 app.use(cors);
@@ -39,24 +49,24 @@ app.use(limiter);
 app.use(requestLogger);
 
 /**
- * Middleware de parsing
+ * Body parsing
  */
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 /**
- * Middleware de validation et sanitisation
+ * Validation and sanitization
  */
 app.use(validateHeaders);
 app.use(sanitizeInput);
 
 /**
- * Fichiers statiques
+ * Static assets
  */
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
- * Routes principales
+ * Pages
  */
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -75,7 +85,7 @@ app.get('/reception', (req, res) => {
 });
 
 /**
- * Routes API
+ * API routes
  */
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/registrations', registrationRoutes);
@@ -84,10 +94,15 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', configRoutes);
 
 /**
- * Endpoints de compatibilité avec l'ancienne API
+ * Legacy compatibility endpoints
  */
 app.post('/api/check-in', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy check-in endpoint. Use POST /api/registrations.',
+      '/api/registrations'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.checkIn(req, res, next);
@@ -98,6 +113,11 @@ app.post('/api/check-in', async (req, res, next) => {
 
 app.post('/api/check-out', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy check-out endpoint. Use POST /api/checkout/:id after check-in.',
+      '/api/checkout/:id'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.checkOut(req, res, next);
@@ -108,6 +128,11 @@ app.post('/api/check-out', async (req, res, next) => {
 
 app.get('/api/admin/stats', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy admin statistics endpoint. Use GET /api/admin/stats/summary.',
+      '/api/admin/stats/summary'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.getStatistics(req, res, next);
@@ -118,6 +143,11 @@ app.get('/api/admin/stats', async (req, res, next) => {
 
 app.get('/api/admin/visitors/current', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy current visitors endpoint. Use GET /api/reception/today or GET /api/admin/dashboard/today.',
+      '/api/admin/dashboard/today'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.getCurrentVisitors(req, res, next);
@@ -128,6 +158,11 @@ app.get('/api/admin/visitors/current', async (req, res, next) => {
 
 app.get('/api/admin/visitors/history', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy history endpoint. Use GET /api/admin/visitors.',
+      '/api/admin/visitors'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.getAllVisitors(req, res, next);
@@ -138,6 +173,11 @@ app.get('/api/admin/visitors/history', async (req, res, next) => {
 
 app.post('/api/admin/clear-visitors', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy debug endpoint. Avoid in production.',
+      '/api/admin/dashboard/today'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.clearAllVisitors(req, res, next);
@@ -148,6 +188,11 @@ app.post('/api/admin/clear-visitors', async (req, res, next) => {
 
 app.post('/api/admin/generate-test-visitors', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy debug endpoint. Avoid in production.',
+      '/api/registrations'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.generateTestVisitors(req, res, next);
@@ -158,6 +203,11 @@ app.post('/api/admin/generate-test-visitors', async (req, res, next) => {
 
 app.post('/api/admin/anonymize', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy anonymize endpoint. Use retention settings in /api/admin/settings.',
+      '/api/admin/settings'
+    );
     const VisitorController = require('./src/controllers/VisitorController');
     const controller = new VisitorController();
     await controller.anonymizeOldVisitors(req, res, next);
@@ -178,6 +228,11 @@ app.get('/api/welcome-message', async (req, res, next) => {
 
 app.get('/api/admin/config', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy admin config endpoint. Use GET /api/admin/settings.',
+      '/api/admin/settings'
+    );
     const ConfigController = require('./src/controllers/ConfigController');
     const controller = new ConfigController();
     await controller.getFullConfig(req, res, next);
@@ -188,6 +243,11 @@ app.get('/api/admin/config', async (req, res, next) => {
 
 app.post('/api/admin/config', async (req, res, next) => {
   try {
+    setLegacyRouteHeaders(
+      res,
+      'Legacy admin config endpoint. Use PUT /api/admin/settings.',
+      '/api/admin/settings'
+    );
     const ConfigController = require('./src/controllers/ConfigController');
     const controller = new ConfigController();
     await controller.updateConfig(req, res, next);
@@ -196,7 +256,7 @@ app.post('/api/admin/config', async (req, res, next) => {
   }
 });
 
-// Route changement PIN gérée par configRoutes.js
+// Legacy PIN change handled by configRoutes.js
 
 app.post('/api/admin/login', async (req, res, next) => {
   try {
@@ -222,125 +282,141 @@ app.get('/health', (req, res) => {
 });
 
 /**
- * Endpoint d'informations sur l'API
+ * API information endpoint
  */
 app.get('/api', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'API de gestion des visiteurs',
+    message: 'Visitor management API',
     version: '2.0.0',
     endpoints: {
       visitors: {
-        'POST /api/visitors/check-in': 'Enregistrer une arrivée',
-        'POST /api/visitors/check-out': 'Enregistrer un départ',
-        'GET /api/visitors': 'Obtenir tous les visiteurs',
-        'GET /api/visitors/current': 'Obtenir les visiteurs présents',
-        'GET /api/visitors/stats': 'Obtenir les statistiques',
-        'GET /api/visitors/:id': 'Obtenir un visiteur par ID',
-        'GET /api/visitors/range': 'Obtenir les visiteurs par période',
-        'POST /api/visitors/anonymize': 'Anonymiser les visiteurs anciens',
-        'DELETE /api/visitors/clear': 'Supprimer tous les visiteurs (debug)'
+        'POST /api/visitors/check-in': 'Register a visitor arrival',
+        'POST /api/visitors/check-out': 'Register a visitor departure',
+        'GET /api/visitors': 'Get all visitors',
+        'GET /api/visitors/current': 'Get current visitors',
+        'GET /api/visitors/stats': 'Get visitor statistics',
+        'GET /api/visitors/:id': 'Get a visitor by ID',
+        'GET /api/visitors/range': 'Get visitors by date range',
+        'POST /api/visitors/anonymize': 'Anonymize old visitors',
+        'DELETE /api/visitors/clear': 'Delete all visitors (debug)'
       },
       config: {
-        'GET /api/public': 'Obtenir la configuration publique',
-        'GET /api/public/config': 'Obtenir la configuration publique',
-        'GET /api/welcome-message': 'Obtenir le message de bienvenue',
-        'POST /api/registrations': 'Creer une pre-registration visiteur',
-        'GET /api/registrations/:registerNo': 'Obtenir une pre-registration par numero',
-        'GET /api/reception/today': 'Obtenir le tableau de bord reception du jour',
-        'POST /api/checkin/by-pin': 'Enregistrer un check-in par PIN ou numero',
-        'POST /api/checkin/by-qr': 'Enregistrer un check-in par QR',
-        'POST /api/checkout/:id': 'Enregistrer une sortie par identifiant',
-        'POST /api/admin/login': 'Authentification admin',
-        'POST /api/admin/logout': 'Déconnexion admin',
-        'GET /api/admin/session': 'Vérifier la session admin',
-        'GET /api/admin/dashboard/today': 'Tableau de bord du jour',
-        'GET /api/admin/visitors': 'Lister les visiteurs avec filtres',
-        'GET /api/admin/stats/summary': 'Résumé statistique',
-        'GET /api/admin/export.csv': 'Exporter les visiteurs au format CSV',
-        'PATCH /api/admin/visitors/:id/void': 'Marquer un visiteur comme annulé',
-        'GET /api/admin/settings': 'Obtenir les paramètres administrateur',
-        'PUT /api/admin/settings': 'Mettre à jour les paramètres administrateur',
-        'GET /api/admin/config': 'Obtenir la configuration complète',
-        'PUT /api/admin/config': 'Mettre à jour la configuration',
-        'PUT /api/admin/change-pin': 'Changer le code PIN',
-        'PUT /api/admin/logo': 'Mettre à jour le logo',
-        'GET /api/admin/security': 'Obtenir les paramètres de sécurité'
+        'GET /api/public': 'Get public configuration',
+        'GET /api/public/config': 'Get public configuration',
+        'GET /api/welcome-message': 'Get welcome message',
+        'POST /api/registrations': 'Create a visitor pre-registration',
+        'GET /api/registrations/:registerNo': 'Get a pre-registration by number',
+        'GET /api/reception/today': 'Get the reception dashboard for today',
+        'POST /api/checkin/by-pin': 'Check in by PIN or number',
+        'POST /api/checkin/by-qr': 'Check in by QR',
+        'POST /api/checkout/:id': 'Check out by visitor ID',
+        'POST /api/admin/login': 'Admin authentication',
+        'POST /api/admin/logout': 'Admin logout',
+        'GET /api/admin/session': 'Check the admin session',
+        'GET /api/admin/dashboard/today': 'Today dashboard',
+        'GET /api/admin/visitors': 'List visitors with filters',
+        'GET /api/admin/stats/summary': 'Statistics summary',
+        'GET /api/admin/export.csv': 'Export visitors as CSV',
+        'PATCH /api/admin/visitors/:id/void': 'Void a visitor record',
+        'GET /api/admin/settings': 'Get admin settings',
+        'PUT /api/admin/settings': 'Update admin settings',
+        'GET /api/admin/config': 'Get full configuration',
+        'PUT /api/admin/config': 'Update configuration',
+        'PUT /api/admin/change-pin': 'Change the PIN code',
+        'PUT /api/admin/logo': 'Update the logo',
+        'GET /api/admin/security': 'Get security settings'
+      },
+      deprecated: {
+        visitors: {
+          'POST /api/check-in': 'Legacy compatibility route. Use POST /api/registrations.',
+          'POST /api/check-out': 'Legacy compatibility route. Use POST /api/checkout/:id.',
+          'GET /api/admin/stats': 'Legacy compatibility route. Use GET /api/admin/stats/summary.',
+          'GET /api/admin/visitors/current': 'Legacy compatibility route. Use GET /api/admin/dashboard/today.',
+          'GET /api/admin/visitors/history': 'Legacy compatibility route. Use GET /api/admin/visitors.',
+          'POST /api/admin/clear-visitors': 'Legacy debug route. Avoid in production.',
+          'POST /api/admin/generate-test-visitors': 'Legacy debug route. Avoid in production.',
+          'POST /api/admin/anonymize': 'Legacy route. Use retention settings in /api/admin/settings.'
+        },
+        config: {
+          'GET /api/admin/config': 'Legacy route. Use GET /api/admin/settings.',
+          'PUT /api/admin/config': 'Legacy route. Use PUT /api/admin/settings.',
+          'POST /api/admin/change-pin': 'Legacy route. PIN-only admin flow is deprecated.',
+          'PUT /api/admin/logo': 'Legacy route. Admin settings now handle branding.',
+          'GET /api/admin/security': 'Legacy route. Security settings moved into /api/admin/settings.'
+        }
       }
     }
   });
 });
 
 /**
- * Gestion des erreurs
+ * Error handling
  */
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 /**
- * Gestion des erreurs non capturées
+ * Uncaught error handlers
  */
 process.on('uncaughtException', (error) => {
-  logger.error('Exception non capturée', {
+  logger.error('Uncaught exception', {
     error: error.message,
     stack: error.stack
   });
-  
+
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Promesse rejetée non gérée', {
+  logger.error('Unhandled rejection', {
     reason: reason,
     promise: promise
   });
-  
+
   process.exit(1);
 });
 
 /**
- * Démarrage du serveur
+ * Start the server
  */
 const startServer = async () => {
   try {
     const server = app.listen(config.PORT, () => {
-      logger.info(`Serveur démarré`, {
+      logger.info('Server started', {
         port: config.PORT,
         environment: config.NODE_ENV,
         version: '2.0.0',
         timestamp: new Date().toISOString()
       });
-      
-      console.log(`🚀 Serveur en ligne sur http://localhost:${config.PORT}`);
-      console.log(`📊 Interface admin: http://localhost:${config.PORT}/admin`);
-      console.log(`🔧 API documentation: http://localhost:${config.PORT}/api`);
-      console.log(`❤️  Health check: http://localhost:${config.PORT}/health`);
+
+      console.log(`Server online at http://localhost:${config.PORT}`);
+      console.log(`Admin interface: http://localhost:${config.PORT}/admin`);
+      console.log(`API documentation: http://localhost:${config.PORT}/api`);
+      console.log(`Health check: http://localhost:${config.PORT}/health`);
     });
 
-    // Gestion de l'arrêt propre
     const gracefulShutdown = (signal) => {
-      logger.info(`Signal ${signal} reçu, arrêt en cours...`);
-      
+      logger.info(`Signal ${signal} received, shutting down...`);
+
       server.close(() => {
-        logger.info('Serveur arrêté proprement');
+        logger.info('Server stopped cleanly');
         process.exit(0);
       });
     };
 
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
-
   } catch (error) {
-    logger.error('Erreur lors du démarrage du serveur', {
+    logger.error('Error while starting server', {
       error: error.message,
       stack: error.stack
     });
-    
+
     process.exit(1);
   }
 };
 
-// Démarrer le serveur si ce fichier est exécuté directement
 if (require.main === module) {
   startServer();
 }

@@ -4,10 +4,15 @@ const multer = require('multer');
 const path = require('path');
 const ConfigController = require('../controllers/ConfigController');
 const { strictLimiter } = require('../middleware/security');
+const { applyDeprecationHeaders } = require('../middleware/deprecation');
 const config = require('../config/config');
 
 const router = express.Router();
 const configController = new ConfigController();
+const legacyAdminConfigRoute = applyDeprecationHeaders({
+  message: 'Legacy admin configuration endpoints are deprecated. Use /api/admin/session and /api/admin/settings.',
+  replacement: '/api/admin/settings'
+});
 
 const storage = multer.diskStorage({
   destination: config.UPLOAD_DIR,
@@ -69,13 +74,13 @@ router.get('/welcome-message', configController.getWelcomeMessage);
  * Admin routes
  */
 
-router.post('/admin/login', strictLimiter, configController.login);
-router.get('/admin/config', configController.getFullConfig);
-router.put('/admin/config', configController.updateConfig);
-router.post('/admin/change-pin', strictLimiter, configController.changePin);
-router.put('/admin/logo', handleLogoUpload, configController.updateLogo);
+router.post('/admin/login', legacyAdminConfigRoute, strictLimiter, configController.login);
+router.get('/admin/config', legacyAdminConfigRoute, configController.getFullConfig);
+router.put('/admin/config', legacyAdminConfigRoute, configController.updateConfig);
+router.post('/admin/change-pin', legacyAdminConfigRoute, strictLimiter, configController.changePin);
+router.put('/admin/logo', legacyAdminConfigRoute, handleLogoUpload, configController.updateLogo);
 
-router.post('/admin/logo', (req, res) => {
+router.post('/admin/logo', legacyAdminConfigRoute, (req, res) => {
   const sendNotFound = () => {
     if (res.headersSent) {
       return;
@@ -101,7 +106,7 @@ router.post('/admin/logo', (req, res) => {
   sendNotFound();
 });
 
-router.get('/admin/security', configController.getSecuritySettings);
-router.post('/admin/config/reset', configController.resetConfig);
+router.get('/admin/security', legacyAdminConfigRoute, configController.getSecuritySettings);
+router.post('/admin/config/reset', legacyAdminConfigRoute, configController.resetConfig);
 
 module.exports = router;

@@ -1,162 +1,32 @@
-# 🔄 Procédure de Redémarrage du Serveur
+# Restart Procedure
 
-> **📚 Documentation :** Ce fichier fait partie de la [documentation complète du projet](README.md#-documentation-complète). Consultez le [README.md](README.md) pour une vue d'ensemble.
+Use this procedure when you need to restart the Node app during local development or deployment.
 
-## 📋 Procédure Standard de Redémarrage
+## Stop the app
 
-### 1. Arrêt Propre du Serveur
+- If the app runs in a terminal, press `Ctrl+C`
+- If it runs as a background process, stop that process with your service manager
 
-```bash
-# Arrêter le processus Node.js proprement
-pkill -f "node server.js"
-
-# Attendre 2 secondes pour l'arrêt complet
-sleep 2
-
-# Vérifier que le processus est arrêté
-ps aux | grep "node server.js" | grep -v grep
-```
-
-### 2. Libération du Port (si nécessaire)
+## Start the app again
 
 ```bash
-# Forcer la libération du port 3001 si nécessaire
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
+npm start
 ```
 
-### 3. Redémarrage en Arrière-Plan
+## Check that it is up
 
 ```bash
-# Démarrer le serveur en arrière-plan avec logs
-nohup npm start > server.log 2>&1 &
+curl http://localhost:3001/health
 ```
 
-### 4. Vérification du Démarrage
+## Useful notes
 
-```bash
-# Attendre que le serveur démarre
-sleep 3
+- The app uses `data/visitor.db` for SQLite storage
+- If you changed environment variables or migration files, restart the app after the change
+- If you imported old JSON data, rerun `npm run migrate:json-to-sqlite` only once unless you want to import again
 
-# Vérifier que le serveur répond
-curl -s http://localhost:3001/health
-```
+## Common issues
 
-## 🚨 Problèmes Courants et Solutions
-
-### Port déjà utilisé
-```bash
-# Trouver et tuer le processus qui utilise le port
-lsof -ti:3001 | xargs kill -9
-
-# Puis redémarrer normalement
-nohup npm start > server.log 2>&1 &
-```
-
-### Processus zombie
-```bash
-# Tuer tous les processus Node.js liés au projet
-pkill -f "node server.js"
-pkill -f "npm start"
-
-# Nettoyer les ports
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
-
-# Redémarrer
-nohup npm start > server.log 2>&1 &
-```
-
-### Logs non visibles
-```bash
-# Voir les logs en temps réel
-tail -f server.log
-
-# Voir les dernières lignes
-tail -20 server.log
-```
-
-## ⚡ Script de Redémarrage Automatisé
-
-Créer un script `restart.sh` :
-
-```bash
-#!/bin/bash
-# restart.sh - Script de redémarrage automatisé
-
-echo "🔄 Arrêt du serveur..."
-pkill -f "node server.js"
-sleep 2
-
-echo "🧹 Nettoyage du port 3001..."
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
-
-echo "🚀 Démarrage du serveur..."
-nohup npm start > server.log 2>&1 &
-
-echo "⏳ Attente du démarrage..."
-sleep 3
-
-echo "✅ Vérification de l'état..."
-if curl -s http://localhost:3001/health > /dev/null; then
-    echo "✅ Serveur démarré avec succès sur http://localhost:3001"
-else
-    echo "❌ Erreur lors du démarrage"
-    echo "Logs:"
-    tail -10 server.log
-fi
-```
-
-Rendre le script exécutable :
-```bash
-chmod +x restart.sh
-```
-
-Utilisation :
-```bash
-./restart.sh
-```
-
-## 🔍 Vérifications Post-Redémarrage
-
-### 1. Health Check
-```bash
-curl -s http://localhost:3001/health | jq .
-```
-
-### 2. Test des Statistiques
-```bash
-curl -s http://localhost:3001/api/admin/stats | jq .
-```
-
-### 3. Vérification des Logs
-```bash
-tail -20 server.log
-```
-
-## 📝 Bonnes Pratiques
-
-1. **Toujours** attendre 2-3 secondes entre l'arrêt et le redémarrage
-2. **Vérifier** que le port est libéré avant de redémarrer
-3. **Utiliser** `nohup` pour éviter que le processus s'arrête à la fermeture du terminal
-4. **Rediriger** les logs vers un fichier pour le debugging
-5. **Tester** la réponse du serveur après redémarrage
-
-## 🚫 À Éviter
-
-- ❌ Ne jamais utiliser `npm start &` sans `nohup`
-- ❌ Ne pas redémarrer immédiatement après l'arrêt
-- ❌ Ne pas vérifier l'état du serveur après redémarrage
-- ❌ Ne pas nettoyer les processus zombie
-
-## 🔧 Variables d'Environnement
-
-Le serveur utilise le fichier `.env` :
-```bash
-PORT=3001
-NODE_ENV=development
-```
-
-Après modification du `.env`, **toujours** redémarrer le serveur pour prendre en compte les changements.
-
----
-
-**Dernière mise à jour** : 2025-07-17
+- Port already in use: stop the old Node process first
+- Missing data directory: run `npm install` or `npm run init`
+- Database locked: make sure only one app process is using `data/visitor.db`
