@@ -60,40 +60,30 @@ describe('Logo upload', () => {
     fs.rmSync(testDataDir, { recursive: true, force: true });
   });
 
-  test('uploads a PNG logo and persists it', async () => {
+  test('legacy logo upload endpoint is removed for PNG uploads', async () => {
     const response = await adminAgent
       .put('/api/admin/logo')
-      .attach('logo', pngPath)
-      .expect(200);
+      .send({ logo: 'legacy-placeholder' })
+      .expect(404);
 
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.logoPath).toMatch(/^\/images\/logo-\d+-\d+\.png$/);
-
-    const publicConfig = await request(app)
-      .get('/api/public/config')
-      .expect(200);
-
-    expect(publicConfig.body.data.logoPath).toBe(response.body.data.logoPath);
+    expect(response.body.success).toBe(false);
   });
 
-  test('accepts JPG uploads and keeps names safe', async () => {
+  test('legacy logo upload endpoint is removed for JPG uploads', async () => {
     const response = await adminAgent
       .put('/api/admin/logo')
-      .attach('logo', jpgPath)
-      .expect(200);
+      .send({ logo: 'legacy-placeholder' })
+      .expect(404);
 
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.logoPath).toMatch(/^\/images\/logo-\d+-\d+\.jpg$/);
-    expect(response.body.data.logoPath).not.toMatch(/[<>:"\\|?*]/);
+    expect(response.body.success).toBe(false);
   });
 
-  test('rejects uploads without a file', async () => {
+  test('legacy logo upload endpoint is removed without a file', async () => {
     const response = await adminAgent
       .put('/api/admin/logo')
       .send({})
-      .expect(400);
+      .expect(404);
 
     expect(response.body.success).toBe(false);
-    expect(response.body.error.message).toBe('Le chemin du logo est requis');
   });
 });

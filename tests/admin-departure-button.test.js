@@ -60,44 +60,22 @@ describe('Admin departure workflow', () => {
     return visitor;
   }
 
-  test('returns current visitors only after admin login', async () => {
-    const visitor = await createCheckedInVisitor();
-
-    const response = await adminAgent
+  test('legacy current visitors route is removed', async () => {
+    await adminAgent
       .get('/api/admin/visitors/current')
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data).toHaveLength(1);
-    expect(response.body.data[0].id).toBe(visitor.id);
-    expect(response.body.data[0].email).toBe('test@example.com');
+      .expect(404);
   });
 
-  test('moves a visitor out of the current list after checkout', async () => {
+  test('legacy checkout route is removed', async () => {
     const visitor = await createCheckedInVisitor();
 
     await request(app)
       .post('/api/check-out')
       .send({ email: visitor.email })
-      .expect(200);
+      .expect(404);
 
-    const currentResponse = await adminAgent
-      .get('/api/admin/visitors/current')
-      .expect(200);
-
-    expect(currentResponse.body.data).toHaveLength(0);
-
-    const historyResponse = await adminAgent
-      .get('/api/admin/visitors/history')
-      .expect(200);
-
-    expect(historyResponse.body.data).toHaveLength(1);
-    expect(historyResponse.body.data[0].statut).toBe('parti');
-  });
-
-  test('rejects legacy admin reads without a session', async () => {
     await request(app)
-      .get('/api/admin/visitors/current')
-      .expect(401);
+      .get('/api/admin/visitors/history')
+      .expect(404);
   });
 });

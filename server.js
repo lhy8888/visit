@@ -19,10 +19,7 @@ const {
   errorHandler,
   notFoundHandler
 } = require('./src/middleware/errorHandler');
-const { requireAdminAuth } = require('./src/middleware/adminAuth');
-
 // Routes
-const visitorRoutes = require('./src/routes/visitorRoutes');
 const configRoutes = require('./src/routes/configRoutes');
 const registrationRoutes = require('./src/routes/registrationRoutes');
 const receptionRoutes = require('./src/routes/receptionRoutes');
@@ -32,16 +29,6 @@ const adminRoutes = require('./src/routes/adminRoutes');
  * Creation of the Express application
  */
 const app = express();
-
-const setLegacyRouteHeaders = (res, message, replacement) => {
-  res.setHeader('Deprecation', 'true');
-  res.setHeader('X-Deprecated-Endpoint', 'true');
-  res.setHeader('X-Deprecated-Message', message);
-
-  if (replacement) {
-    res.setHeader('Link', `<${replacement}>; rel="alternate"`);
-  }
-};
 
 /**
  * Security middleware
@@ -90,134 +77,10 @@ app.get('/reception', (req, res) => {
 /**
  * API routes
  */
-app.use('/api/visitors', visitorRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api', receptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', configRoutes);
-
-/**
- * Legacy compatibility endpoints
- */
-app.post('/api/check-in', async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy check-in endpoint. Use POST /api/registrations.',
-      '/api/registrations'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.checkIn(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/check-out', async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy check-out endpoint. Use POST /api/checkout/:id after check-in.',
-      '/api/checkout/:id'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.checkOut(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/api/admin/stats', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy admin statistics endpoint. Use GET /api/admin/stats/summary.',
-      '/api/admin/stats/summary'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.getStatistics(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/api/admin/visitors/current', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy current visitors endpoint. Use GET /api/admin/dashboard/today.',
-      '/api/admin/dashboard/today'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.getCurrentVisitors(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.get('/api/admin/visitors/history', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy history endpoint. Use GET /api/admin/visitors.',
-      '/api/admin/visitors'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.getAllVisitors(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/admin/clear-visitors', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy debug endpoint. Avoid in production.',
-      '/api/admin/dashboard/today'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.clearAllVisitors(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/admin/generate-test-visitors', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy debug endpoint. Avoid in production.',
-      '/api/registrations'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.generateTestVisitors(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/admin/anonymize', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy anonymize endpoint. Use retention settings in /api/admin/settings.',
-      '/api/admin/settings'
-    );
-    const VisitorController = require('./src/controllers/VisitorController');
-    const controller = new VisitorController();
-    await controller.anonymizeOldVisitors(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
 
 app.get('/api/welcome-message', async (req, res, next) => {
   try {
@@ -228,38 +91,6 @@ app.get('/api/welcome-message', async (req, res, next) => {
     next(error);
   }
 });
-
-app.get('/api/admin/config', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy admin config endpoint. Use GET /api/admin/settings.',
-      '/api/admin/settings'
-    );
-    const ConfigController = require('./src/controllers/ConfigController');
-    const controller = new ConfigController();
-    await controller.getFullConfig(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/admin/config', requireAdminAuth, async (req, res, next) => {
-  try {
-    setLegacyRouteHeaders(
-      res,
-      'Legacy admin config endpoint. Use PUT /api/admin/settings.',
-      '/api/admin/settings'
-    );
-    const ConfigController = require('./src/controllers/ConfigController');
-    const controller = new ConfigController();
-    await controller.updateConfig(req, res, next);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Legacy PIN change handled by configRoutes.js
 
 /**
  * Health check endpoint
@@ -283,17 +114,6 @@ app.get('/api', (req, res) => {
     message: 'Visitor management API',
     version: '2.0.0',
     endpoints: {
-      visitors: {
-        'POST /api/visitors/check-in': 'Register a visitor arrival',
-        'POST /api/visitors/check-out': 'Register a visitor departure',
-        'GET /api/visitors': 'Get all visitors',
-        'GET /api/visitors/current': 'Get current visitors',
-        'GET /api/visitors/stats': 'Get visitor statistics',
-        'GET /api/visitors/:id': 'Get a visitor by ID',
-        'GET /api/visitors/range': 'Get visitors by date range',
-        'POST /api/visitors/anonymize': 'Anonymize old visitors',
-        'DELETE /api/visitors/clear': 'Delete all visitors (debug)'
-      },
       config: {
         'GET /api/public': 'Get public configuration',
         'GET /api/public/config': 'Get public configuration',
@@ -313,31 +133,7 @@ app.get('/api', (req, res) => {
         'GET /api/admin/export.csv': 'Export visitors as CSV',
         'PATCH /api/admin/visitors/:id/void': 'Void a visitor record',
         'GET /api/admin/settings': 'Get admin settings',
-        'PUT /api/admin/settings': 'Update admin settings',
-        'GET /api/admin/config': 'Get full configuration',
-        'PUT /api/admin/config': 'Update configuration',
-        'PUT /api/admin/change-pin': 'Change the PIN code',
-        'PUT /api/admin/logo': 'Update the logo',
-        'GET /api/admin/security': 'Get security settings'
-      },
-      deprecated: {
-        visitors: {
-          'POST /api/check-in': 'Legacy compatibility route. Use POST /api/registrations.',
-          'POST /api/check-out': 'Legacy compatibility route. Use POST /api/checkout/:id.',
-          'GET /api/admin/stats': 'Legacy compatibility route. Use GET /api/admin/stats/summary.',
-          'GET /api/admin/visitors/current': 'Legacy compatibility route. Use GET /api/admin/dashboard/today.',
-          'GET /api/admin/visitors/history': 'Legacy compatibility route. Use GET /api/admin/visitors.',
-          'POST /api/admin/clear-visitors': 'Legacy debug route. Avoid in production.',
-          'POST /api/admin/generate-test-visitors': 'Legacy debug route. Avoid in production.',
-          'POST /api/admin/anonymize': 'Legacy route. Use retention settings in /api/admin/settings.'
-        },
-        config: {
-          'GET /api/admin/config': 'Legacy route. Use GET /api/admin/settings.',
-          'PUT /api/admin/config': 'Legacy route. Use PUT /api/admin/settings.',
-          'POST /api/admin/change-pin': 'Legacy route. PIN-only admin flow is deprecated.',
-          'PUT /api/admin/logo': 'Legacy route. Admin settings now handle branding.',
-          'GET /api/admin/security': 'Legacy route. Security settings moved into /api/admin/settings.'
-        }
+        'PUT /api/admin/settings': 'Update admin settings'
       }
     }
   });

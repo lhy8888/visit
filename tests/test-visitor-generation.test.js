@@ -13,7 +13,7 @@ const VisitorRepository = require('../src/repositories/VisitorRepository');
 const { closeDatabase } = require('../src/db/sqlite');
 const app = require('../server');
 
-describe('Test visitor generation and legacy compatibility routes', () => {
+describe('Legacy visitor routes are removed', () => {
   let visitorRepo;
   let adminAgent;
 
@@ -51,65 +51,34 @@ describe('Test visitor generation and legacy compatibility routes', () => {
     }
   });
 
-  test('creates a visitor through the legacy check-in route', async () => {
-    const testVisitor = {
-      nom: 'Martin',
-      prenom: 'Jean',
-      societe: 'Tech Solutions SARL',
-      email: 'jean.martin.test1234@techsolutions.fr',
-      telephone: '06 12 34 56 78',
-      personneVisitee: 'Marie Dubois'
-    };
-
-    const response = await request(app)
-      .post('/api/check-in')
-      .send(testVisitor)
-      .expect(201);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.nom).toBe('Martin');
-    expect(response.body.data.societe).toBe('Tech Solutions SARL');
-    expect(response.headers.deprecation).toBe('true');
-  });
-
-  test('rejects invalid legacy check-in payloads', async () => {
-    const response = await request(app)
+  test('returns 404 for the old check-in route', async () => {
+    await request(app)
       .post('/api/check-in')
       .send({
-        nom: 'Test',
-        prenom: 'Invalid',
-        societe: 'Test Company',
-        email: 'email-invalide',
+        nom: 'Martin',
+        prenom: 'Jean',
+        societe: 'Tech Solutions SARL',
+        email: 'jean.martin.test1234@techsolutions.fr',
         telephone: '06 12 34 56 78',
-        personneVisitee: 'Test Manager'
+        personneVisitee: 'Marie Dubois'
       })
-      .expect(400);
-
-    expect(response.body.success).toBe(false);
-    expect(response.body.error.message).toContain('adresse email');
+      .expect(404);
   });
 
-  test('generates test visitors only with an admin session', async () => {
-    const response = await adminAgent
+  test('returns 404 for the old admin debug route', async () => {
+    await adminAgent
       .post('/api/admin/generate-test-visitors')
       .send({
         count: 3,
         daysBack: 7
       })
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.requested).toBe(3);
-    expect(response.body.data.generated).toBeLessThanOrEqual(3);
-
-    const visitors = await visitorRepo.findAll();
-    expect(visitors.length).toBe(response.body.data.generated);
+      .expect(404);
   });
 
-  test('rejects legacy admin debug routes without a session', async () => {
+  test('returns 404 for the old admin debug route without a session', async () => {
     await request(app)
       .post('/api/admin/generate-test-visitors')
       .send({ count: 1 })
-      .expect(401);
+      .expect(404);
   });
 });

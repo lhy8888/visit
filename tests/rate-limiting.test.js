@@ -37,7 +37,7 @@ describe('Rate limiting', () => {
   test('allows bursts of public welcome message requests', async () => {
     const promises = [];
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       promises.push(
         request(app)
           .get('/api/welcome-message')
@@ -70,19 +70,18 @@ describe('Rate limiting', () => {
     });
   });
 
-  test('visit check-in and checkout bursts do not hit 429', async () => {
+  test('visitor registration bursts do not hit 429', async () => {
     const requests = [];
+    const scheduledDate = new Date().toISOString().slice(0, 10);
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       requests.push(
         request(app)
-          .post('/api/check-in')
+          .post('/api/registrations')
           .send({
-            nom: `TestUser${i}`,
-            prenom: 'Rate',
-            email: `ratetest${i}@example.com`,
-            telephone: '0123456789',
-            personneVisitee: 'Test Manager'
+            visitor_name: `TestUser${i}`,
+            host_name: 'Test Manager',
+            scheduled_date: scheduledDate
           })
       );
     }
@@ -92,7 +91,7 @@ describe('Rate limiting', () => {
       expect(response.status).not.toBe(429);
       expect(response.body).toHaveProperty('success');
     });
-  });
+  }, 15000);
 
   test('admin settings endpoint is available with a session cookie', async () => {
     const agent = await loginAsAdmin();

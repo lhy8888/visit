@@ -7,12 +7,12 @@
   <link rel="stylesheet" href="/style.css">
   <script src="/admin.js" defer></script>
 </head>
-<body class="page-shell">
+<body class="page-shell admin-page">
   <main class="page admin-layout">
     <section class="hero">
       <p class="eyebrow">Administration</p>
       <h1>Authenticated visitor dashboard</h1>
-      <p class="lead">Log in with the new admin account to review today's queue, search the history, export CSV, and manage settings. The legacy PIN login remains available during the transition.</p>
+      <p class="lead">Log in with the admin account to review today's queue, search the history, export CSV, and manage settings.</p>
     </section>
 
     <section id="status-message" class="status" aria-live="polite"></section>
@@ -22,7 +22,7 @@
         <div>
           <p class="eyebrow">Sign in</p>
           <h2>Admin access</h2>
-          <p class="helper admin-login-note">Use the new username/password account, or enter the legacy PIN if you are migrating from the old workflow.</p>
+          <p class="helper admin-login-note">Use the username and password for the admin account.</p>
         </div>
         <span class="pill blue">Session cookie</span>
       </div>
@@ -35,10 +35,6 @@
         <div class="field">
           <label for="password">Password</label>
           <input id="password" name="password" type="password" autocomplete="current-password" placeholder="123456">
-        </div>
-        <div class="field full">
-          <label for="pin">Legacy PIN</label>
-          <input id="pin" name="pin" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
         </div>
         <div class="field full">
           <div class="admin-actions">

@@ -35,13 +35,12 @@ describe('Legacy PIN change deprecation', () => {
     await fs.rm(testDataDir, { recursive: true, force: true });
   });
 
-  test('returns a deprecation error for the legacy PIN change route', async () => {
+  test('returns 404 for the removed PIN change route', async () => {
     const response = await adminAgent
       .post('/api/admin/change-pin')
       .send({ newPin: '1234' })
-      .expect(410);
+      .expect(404);
 
     expect(response.body.success).toBe(false);
-    expect(response.body.error.message).toContain('Legacy PIN configuration has been removed');
   });
 });

@@ -99,14 +99,6 @@ describe('Registration workflow', () => {
     expect(currentResponse.body.data.pending).toHaveLength(1);
     expect(currentResponse.body.data.checkedIn).toHaveLength(0);
 
-    const allVisitorsResponse = await request(app)
-      .get('/api/visitors')
-      .expect(200);
-
-    expect(allVisitorsResponse.body.data).toHaveLength(1);
-    expect(allVisitorsResponse.body.data[0].status).toBe('registered');
-    expect(allVisitorsResponse.body.data[0].statut).toBe('registered');
-    expect(allVisitorsResponse.body.data[0].registerNo).toBeUndefined();
     expect(createResponse.body.data.registerNo).toBeTruthy();
   });
 

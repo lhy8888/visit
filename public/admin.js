@@ -371,7 +371,6 @@ async function login(event) {
     const formData = new FormData(loginForm);
     const username = String(formData.get('username') || '').trim();
     const password = String(formData.get('password') || '').trim();
-    const pin = String(formData.get('pin') || '').trim();
 
     const payload = {};
     if (username) {
@@ -379,9 +378,6 @@ async function login(event) {
     }
     if (password) {
       payload.password = password;
-    }
-    if (pin) {
-      payload.pin = pin;
     }
 
     await apiRequest('/api/admin/login', {

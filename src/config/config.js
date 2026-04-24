@@ -26,7 +26,6 @@ module.exports = {
   VISITOR_JSON_COMPAT_MODE: parseBooleanEnv(process.env.VISITOR_JSON_COMPAT_MODE, false),
   
   // Sécurité
-  DEFAULT_PIN_HASH: process.env.DEFAULT_PIN_HASH || '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
   ADMIN_DEFAULT_USERNAME: process.env.ADMIN_DEFAULT_USERNAME || 'admin',
   ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || '123456',
   ADMIN_SESSION_COOKIE_NAME: process.env.ADMIN_SESSION_COOKIE_NAME || 'visitor_admin_session',

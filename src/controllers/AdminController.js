@@ -28,7 +28,7 @@ class AdminController {
         session: result.session
       },
       meta: {
-        authMode: result.authMode || (req.body?.username || req.body?.password ? 'password' : 'pin')
+        authMode: result.authMode || 'password'
       }
     });
   });

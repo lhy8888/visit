@@ -43,7 +43,7 @@ describe('Compatibility smoke tests', () => {
     await fs.rm(testDataDir, { recursive: true, force: true });
   });
 
-  test('legacy check-in route still works and is marked deprecated', async () => {
+  test('legacy check-in and check-out routes are removed', async () => {
     const response = await request(app)
       .post('/api/check-in')
       .send({
@@ -54,48 +54,27 @@ describe('Compatibility smoke tests', () => {
         telephone: '0123456789',
         personneVisitee: 'Marie Dubois'
       })
-      .expect(201);
+      .expect(404);
 
-    expect(response.body.success).toBe(true);
-    expect(response.headers.deprecation).toBe('true');
-    expect(response.headers['x-deprecated-endpoint']).toBe('true');
-    expect(response.body.data.email).toBe('jean.martin@test.com');
-  });
-
-  test('legacy check-out route still works', async () => {
     await request(app)
-      .post('/api/check-in')
-      .send({
-        nom: 'Martin',
-        prenom: 'Jean',
-        societe: 'Test Corp',
-        email: 'jean.checkout@test.com',
-        telephone: '0123456789',
-        personneVisitee: 'Marie Dubois'
-      })
-      .expect(201);
-
-    const response = await request(app)
       .post('/api/check-out')
       .send({ email: 'jean.checkout@test.com' })
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.statut).toBe('parti');
+      .expect(404);
   });
 
-  test('legacy admin config route requires an admin session', async () => {
+  test('legacy admin config routes are removed', async () => {
     await request(app)
       .get('/api/admin/config')
-      .expect(401);
+      .expect(404);
 
-    const response = await adminAgent
+    await adminAgent
       .get('/api/admin/config')
-      .expect(200);
+      .expect(404);
 
-    expect(response.body.success).toBe(true);
-    expect(response.headers.deprecation).toBe('true');
-    expect(response.body.data).toHaveProperty('welcomeMessage');
+    await request(app)
+      .post('/api/admin/change-pin')
+      .send({ newPin: '1234' })
+      .expect(404);
   });
 
   test('admin login no longer accepts pin-only credentials', async () => {
