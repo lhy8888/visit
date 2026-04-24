@@ -107,6 +107,9 @@ describe('🚀 Server Tests - Gestion des Visiteurs', () => {
         .expect(201);
 
       expect(response.body.message).toBe('Visiteur enregistré avec succès');
+      expect(response.headers.deprecation).toBe('true');
+      expect(response.headers['x-deprecated-endpoint']).toBe('true');
+      expect(response.headers.link).toContain('/api/registrations');
       
       // Vérifier que les données ont été sauvegardées
       const visitors = JSON.parse(await fs.readFile(testVisitorsFile, 'utf8'));
@@ -318,6 +321,8 @@ describe('🚀 Server Tests - Gestion des Visiteurs', () => {
 
       expect(response.body.data.welcomeMessage).toBe('Bienvenue Test');
       expect(response.body.data.anonymizationDays).toBe(30);
+      expect(response.headers.deprecation).toBe('true');
+      expect(response.headers['x-deprecated-endpoint']).toBe('true');
     });
 
     test('POST /api/admin/config - Mise à jour configuration', async () => {
