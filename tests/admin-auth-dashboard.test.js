@@ -1,7 +1,6 @@
 const request = require('supertest');
 const path = require('path');
 const fs = require('fs').promises;
-const crypto = require('crypto');
 
 process.env.NODE_ENV = 'test';
 
@@ -23,14 +22,6 @@ describe('Admin authentication and dashboard', () => {
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
-    await fs.writeFile(process.env.CONFIG_FILE, JSON.stringify({
-      pinCodeHash: crypto.createHash('sha256').update('123456').digest('hex'),
-      requirePinChange: false,
-      welcomeMessage: 'Welcome admin',
-      logoPath: '/images/logo.png',
-      anonymizationDays: 30,
-      maxFileSize: 2000000
-    }, null, 2));
   });
 
   beforeEach(async () => {

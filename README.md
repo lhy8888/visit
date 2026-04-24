@@ -45,8 +45,9 @@ Default admin credentials:
 ## Data files
 
 - `data/visitor.db` is the SQLite database
-- `data/config.json` is legacy compatibility storage for deprecated admin config routes
+- `data/config.json` is legacy bootstrap/backup storage only and is not part of the normal runtime config source
 - `data/visitors.json` is only used for legacy import or backup
+- Live public/admin settings are stored in SQLite `app_settings`
 - Set `VISITOR_JSON_COMPAT_MODE=1` only if you need temporary JSON mirroring during a migration. The default runtime does not mirror JSON.
 
 ## Migration from JSON
@@ -107,6 +108,7 @@ These routes still work, but they are deprecated:
 - `GET /api/admin/security`
 
 The legacy admin config routes require a valid admin session and should not be used in new code. The new supported admin control surface is `GET /api/admin/settings` and `PUT /api/admin/settings`.
+The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`.
 
 ## Development
 

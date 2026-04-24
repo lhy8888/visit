@@ -8,6 +8,7 @@ This guide explains the move from the old JSON-based visitor store to the new SQ
 - Public registration now creates a pre-registration instead of immediate arrival
 - Reception check-in uses PIN, register number, or QR
 - Admin auth now uses session cookies
+- Public and admin settings now read from SQLite `app_settings`
 - Legacy JSON routes only remain for compatibility and tests
 - JSON is not mirrored by default; only enable `VISITOR_JSON_COMPAT_MODE=1` if you need temporary compatibility during a migration
 
@@ -55,6 +56,7 @@ The following old routes are kept for compatibility and tests, but they are depr
 - `GET /api/admin/security`
 
 The legacy admin config routes require an admin session. The old PIN-only admin login is removed; use `POST /api/admin/login` with username and password.
+The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`.
 
 ## New primary routes
 

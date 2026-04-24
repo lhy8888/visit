@@ -1,6 +1,4 @@
-const ConfigRepository = require('../repositories/ConfigRepository');
 const SettingsRepository = require('../repositories/SettingsRepository');
-const Config = require('../models/Config');
 const config = require('../config/config');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
@@ -37,9 +35,72 @@ function normalizePublicSettings(rawSettings = {}) {
   };
 }
 
+function normalizeSettingsInput(updates = {}) {
+  const normalized = {};
+
+  const setIfPresent = (targetKey, ...sourceKeys) => {
+    for (const sourceKey of sourceKeys) {
+      if (Object.prototype.hasOwnProperty.call(updates, sourceKey)) {
+        normalized[targetKey] = updates[sourceKey];
+        return;
+      }
+    }
+  };
+
+  setIfPresent('site_title', 'site_title', 'siteTitle');
+  setIfPresent('welcome_message', 'welcome_message', 'welcomeMessage');
+  setIfPresent('logo_path', 'logo_path', 'logoPath');
+  setIfPresent('default_timezone', 'default_timezone', 'defaultTimezone');
+  setIfPresent('pin_length', 'pin_length', 'pinLength');
+  setIfPresent('data_retention_days', 'data_retention_days', 'dataRetentionDays');
+  setIfPresent('enable_qr_checkin', 'enable_qr_checkin', 'enableQrCheckin');
+  setIfPresent('enable_pin_checkin', 'enable_pin_checkin', 'enablePinCheckin');
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'pin_length')) {
+    const pinLength = toNumericSetting(normalized.pin_length, null);
+    if (!Number.isInteger(pinLength) || pinLength < 4 || pinLength > 6) {
+      throw new AppError('Le nombre de chiffres du PIN doit etre compris entre 4 et 6', 400);
+    }
+    normalized.pin_length = String(pinLength);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'data_retention_days')) {
+    const retention = toNumericSetting(normalized.data_retention_days, null);
+    if (!Number.isInteger(retention) || retention < 1 || retention > 365) {
+      throw new AppError('La periode de retention doit etre comprise entre 1 et 365 jours', 400);
+    }
+    normalized.data_retention_days = String(retention);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'enable_qr_checkin')) {
+    normalized.enable_qr_checkin = toBooleanSetting(normalized.enable_qr_checkin) ? '1' : '0';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'enable_pin_checkin')) {
+    normalized.enable_pin_checkin = toBooleanSetting(normalized.enable_pin_checkin) ? '1' : '0';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'site_title')) {
+    normalized.site_title = String(normalized.site_title).trim();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'welcome_message')) {
+    normalized.welcome_message = String(normalized.welcome_message).trim();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'logo_path')) {
+    normalized.logo_path = String(normalized.logo_path).trim();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'default_timezone')) {
+    normalized.default_timezone = String(normalized.default_timezone).trim() || DEFAULT_TIME_ZONE;
+  }
+
+  return normalized;
+}
+
 class ConfigService {
   constructor() {
-    this.configRepository = new ConfigRepository();
     this.settingsRepository = new SettingsRepository();
   }
 
@@ -57,7 +118,15 @@ class ConfigService {
 
   async getFullConfig() {
     try {
-      return await this.configRepository.getConfig();
+      const [publicConfig, securitySettings] = await Promise.all([
+        this.getPublicConfig(),
+        this.getSecuritySettings()
+      ]);
+
+      return {
+        ...publicConfig,
+        ...securitySettings
+      };
     } catch (error) {
       logger.error('Erreur lors de la recuperation de la configuration complete', {
         error: error.message
@@ -68,14 +137,19 @@ class ConfigService {
 
   async updateConfig(updates) {
     try {
-      const updatedConfig = await this.configRepository.updateConfig(updates);
+      const normalizedUpdates = normalizeSettingsInput(updates);
+      const entries = Object.entries(normalizedUpdates);
+
+      for (const [key, value] of entries) {
+        await this.settingsRepository.set(key, value);
+      }
 
       logger.info('Configuration mise a jour avec succes', {
-        updates: Object.keys(updates),
+        updates: Object.keys(normalizedUpdates),
         timestamp: new Date().toISOString()
       });
 
-      return updatedConfig.getPublicConfig();
+      return this.getFullConfig();
     } catch (error) {
       logger.error('Erreur lors de la mise a jour de la configuration', {
         error: error.message,
@@ -85,85 +159,12 @@ class ConfigService {
     }
   }
 
-  async authenticatePin(pin) {
-    try {
-      if (!pin) {
-        throw new AppError('Le code PIN est requis', 400);
-      }
-
-      const isValid = await this.configRepository.verifyPin(pin);
-
-      if (!isValid) {
-        throw new AppError('Code PIN incorrect', 401);
-      }
-
-      logger.info('Authentification PIN reussie', {
-        timestamp: new Date().toISOString()
-      });
-
-      return { success: true, authenticated: true };
-    } catch (error) {
-      logger.warn('Echec de l\'authentification PIN', {
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
-      throw error;
-    }
+  async authenticatePin() {
+    throw new AppError('Legacy PIN-only admin login has been removed. Use username and password.', 410);
   }
 
-  async changePin(newPin, currentPin = null) {
-    try {
-      if (!newPin) {
-        throw new AppError('Le nouveau code PIN est requis', 400);
-      }
-
-      const normalizedPin = this._normalizePin(newPin);
-      this._validatePin(normalizedPin);
-
-      const updatedConfig = await this.configRepository.changePin(normalizedPin, currentPin);
-
-      logger.info('Code PIN change avec succes', {
-        timestamp: new Date().toISOString()
-      });
-
-      return {
-        success: true,
-        message: 'Code PIN mis a jour avec succes',
-        requirePinChange: updatedConfig.requirePinChange
-      };
-    } catch (error) {
-      logger.error('Erreur lors du changement de PIN', {
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
-      throw error;
-    }
-  }
-
-  _normalizePin(pin) {
-    if (pin === null || pin === undefined) {
-      throw new AppError('Le code PIN ne peut pas etre vide', 400);
-    }
-
-    let normalized = String(pin).trim();
-    normalized = normalized.replace(/\s/g, '');
-    return normalized;
-  }
-
-  _validatePin(pin) {
-    if (!pin || pin.length === 0) {
-      throw new AppError('Le code PIN ne peut pas etre vide', 400);
-    }
-
-    if (pin.length < 4 || pin.length > 6) {
-      throw new AppError('Le code PIN doit contenir entre 4 et 6 chiffres', 400);
-    }
-
-    if (!/^\d+$/.test(pin)) {
-      throw new AppError('Le code PIN ne peut contenir que des chiffres', 400);
-    }
-
-    return true;
+  async changePin() {
+    throw new AppError('Legacy PIN configuration has been removed. Use /api/admin/settings.', 410);
   }
 
   async updateLogo(logoPath) {
@@ -172,14 +173,14 @@ class ConfigService {
         throw new AppError('Le chemin du logo est requis', 400);
       }
 
-      const updatedConfig = await this.configRepository.updateLogoPath(logoPath);
+      await this.settingsRepository.set('logo_path', logoPath);
 
       logger.info('Logo mis a jour avec succes', {
         logoPath,
         timestamp: new Date().toISOString()
       });
 
-      return updatedConfig.getPublicConfig();
+      return this.getPublicConfig();
     } catch (error) {
       logger.error('Erreur lors de la mise a jour du logo', {
         error: error.message,
@@ -203,31 +204,19 @@ class ConfigService {
 
   async resetConfig() {
     try {
-      const defaultConfig = await this.configRepository.resetToDefaults();
+      await this.settingsRepository.resetToDefaults();
 
       logger.warn('Configuration reinitialisee aux valeurs par defaut', {
         timestamp: new Date().toISOString()
       });
 
-      return defaultConfig.getPublicConfig();
+      return this.getFullConfig();
     } catch (error) {
       logger.error('Erreur lors de la reinitialisation de la configuration', {
         error: error.message
       });
       throw error;
     }
-  }
-
-  validateConfigUpdate(updates) {
-    const { error, value } = Config.validateConfig(updates);
-    if (error) {
-      throw new AppError(
-        `Configuration invalide: ${error.details.map((d) => d.message).join(', ')}`,
-        400
-      );
-    }
-
-    return value;
   }
 
   async getSecuritySettings() {

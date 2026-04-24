@@ -9,12 +9,10 @@ process.env.VISITORS_FILE = path.join(testDataDir, 'visitors.json');
 process.env.CONFIG_FILE = path.join(testDataDir, 'config.json');
 process.env.DB_FILE = path.join(testDataDir, 'visitor.db');
 
-const ConfigRepository = require('../src/repositories/ConfigRepository');
 const { closeDatabase } = require('../src/db/sqlite');
 const app = require('../server');
 
 describe('Logo upload', () => {
-  let configRepo;
   let adminAgent;
   const pngPath = path.join(__dirname, 'test-logo.png');
   const jpgPath = path.join(__dirname, 'test-logo.jpg');
@@ -40,7 +38,6 @@ describe('Logo upload', () => {
   });
 
   beforeEach(async () => {
-    configRepo = new ConfigRepository();
     adminAgent = request.agent(app);
     await adminAgent
       .post('/api/admin/login')
@@ -72,8 +69,11 @@ describe('Logo upload', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.data.logoPath).toMatch(/^\/images\/logo-\d+-\d+\.png$/);
 
-    const config = await configRepo.getConfig();
-    expect(config.logoPath).toBe(response.body.data.logoPath);
+    const publicConfig = await request(app)
+      .get('/api/public/config')
+      .expect(200);
+
+    expect(publicConfig.body.data.logoPath).toBe(response.body.data.logoPath);
   });
 
   test('accepts JPG uploads and keeps names safe', async () => {

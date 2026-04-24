@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { closeDatabase } = require('../src/db/sqlite');
+const { closeDatabase, openDatabase } = require('../src/db/sqlite');
 const VisitorRepository = require('../src/repositories/VisitorRepository');
 
 describe('SQLite VisitorRepository', () => {
@@ -61,6 +61,23 @@ describe('SQLite VisitorRepository', () => {
     expect(visitors[0].email).toBe('jean.martin@example.com');
 
     await expect(fs.access(legacyPath)).rejects.toHaveProperty('code', 'ENOENT');
+  });
+
+  test('creates the admin_sessions table during SQLite bootstrap', async () => {
+    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
+
+    openDatabase(dbPath);
+
+    const db = openDatabase(dbPath);
+    const table = db.prepare(`
+      SELECT name
+      FROM sqlite_master
+      WHERE type = 'table' AND name = 'admin_sessions'
+      LIMIT 1
+    `).get();
+
+    expect(table).toBeTruthy();
+    expect(table.name).toBe('admin_sessions');
   });
 
   test('can mirror and resync legacy JSON only in explicit compat mode', async () => {
