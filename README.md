@@ -22,7 +22,7 @@ Visitor Access focuses on exactly that.
 
 ### Public visitor registration
 
-Share one generic registration link with guests, contractors, interviewees, delivery partners, or customers. Visitors fill in their details before arrival using any modern browser.
+Share one generic registration link with guests, contractors, interviewees, delivery partners, or customers. Visitors fill in their details before arrival using the browser on their own phone or computer.
 
 After submission, the system creates a visitor pass with:
 
@@ -30,6 +30,8 @@ After submission, the system creates a visitor pass with:
 - a short PIN code
 - a QR code for reception check-in
 - the planned visit date and host name
+
+The visitor pass is shown immediately after submission. It is intended as a convenience page for the visitor to save, print, or show at reception.
 
 ### Reception check-in
 
@@ -77,30 +79,35 @@ Visitor Access is suitable for:
 
 ## Visitor journey
 
-1. A visitor opens the public registration page.
+1. A visitor opens the public registration page in their browser.
 2. The visitor enters their name, company, contact details, host name, visit purpose, and planned visit date.
 3. The system creates a visitor number, PIN, and QR code.
-4. The visitor arrives at reception.
-5. Reception checks the visitor in by PIN, visitor number, or QR scan.
-6. The visitor appears in the checked-in list.
-7. Reception or admin users can search, filter, and export records later.
+4. The visitor saves or shows the visitor pass page.
+5. The visitor arrives at reception.
+6. Reception checks the visitor in by PIN, visitor number, or QR scan.
+7. The visitor appears in the checked-in list.
+8. Reception or admin users can search, filter, and export records later.
 
 ## Main pages
 
 | Page | Purpose |
 | --- | --- |
 | `/` | Public visitor registration form |
-| `/result/:registerNo` | Visitor pass page with number, PIN, and QR code |
+| `/result/:registerNo` | Post-submission visitor pass page showing the generated PIN and QR code |
 | `/reception` | Front desk check-in page |
 | `/admin` | Admin dashboard and reporting |
+
+Note: the result page is currently a simple convenience page addressed by the generated visitor number. For deployments that expose the system outside a trusted office context, use HTTPS and consider changing the result page to use a random private token instead of the visitor number alone.
 
 ## Quick start
 
 ### Requirements
 
 - Node.js `22.13.0` or newer
-- Windows, Linux, or macOS
-- A modern browser for users and reception staff
+- Windows, Linux, or macOS server/PC to run the application
+- A modern web browser such as Chrome, Edge, Safari, or Firefox to open the visitor, reception, and admin pages
+
+The application itself does not include a custom browser. Users and reception staff access it through a normal web browser.
 
 ### Install and run
 
@@ -157,7 +164,9 @@ Visitor Access includes basic security controls suitable for a lightweight inter
 - local SQLite storage
 - no PIN-only admin login
 
-For public internet exposure, place the application behind HTTPS and your normal firewall, reverse proxy, or access-control layer.
+The visitor pass page currently displays the generated PIN and QR code when opened with the matching visitor number. Treat this as a lightweight convenience feature, not a high-security invitation mechanism.
+
+For public internet exposure, place the application behind HTTPS and your normal firewall, reverse proxy, or access-control layer. For stronger visitor privacy, replace `/result/:registerNo` with a private random result token that is only returned after successful registration.
 
 ## Configuration
 
