@@ -1,7 +1,7 @@
 {
-  "name": "visitor-management-app",
+  "name": "visitor-access",
   "version": "2.0.0",
-  "description": "Un système moderne de gestion des visiteurs avec architecture MVC, sécurité renforcée et interface intuitive.",
+  "description": "Lightweight self-hosted visitor registration and reception check-in system for small offices.",
   "main": "server.js",
   "scripts": {
     "preinstall": "node scripts/check-runtime.js",
