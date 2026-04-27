@@ -93,11 +93,9 @@ Visitor Access is suitable for:
 | Page | Purpose |
 | --- | --- |
 | `/` | Public visitor registration form |
-| `/result/:registerNo` | Post-submission visitor pass page showing the generated PIN and QR code |
+| `/result/:registerNo` | Visitor pass page shown after registration |
 | `/reception` | Front desk check-in page |
 | `/admin` | Admin dashboard and reporting |
-
-Note: the result page is currently a simple convenience page addressed by the generated visitor number. For deployments that expose the system outside a trusted office context, use HTTPS and consider changing the result page to use a random private token instead of the visitor number alone.
 
 ## Quick start
 
@@ -164,9 +162,7 @@ Visitor Access includes basic security controls suitable for a lightweight inter
 - local SQLite storage
 - no PIN-only admin login
 
-The visitor pass page currently displays the generated PIN and QR code when opened with the matching visitor number. Treat this as a lightweight convenience feature, not a high-security invitation mechanism.
-
-For public internet exposure, place the application behind HTTPS and your normal firewall, reverse proxy, or access-control layer. For stronger visitor privacy, replace `/result/:registerNo` with a private random result token that is only returned after successful registration.
+For public internet exposure, place the application behind HTTPS and your normal firewall, reverse proxy, or access-control layer.
 
 ## Configuration
 
