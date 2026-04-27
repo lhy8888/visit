@@ -1,109 +1,201 @@
-# Visitor Register
+# Visitor Access
 
-Lightweight office visitor system for a small office of about 100 people.
+A lightweight, self-hosted visitor management system for small offices, reception desks, shared workspaces, schools, labs, and private business sites.
 
-## What it does
+Visitor Access replaces paper sign-in sheets and scattered Excel records with a simple browser-based workflow: visitors pre-register through a public link, receive a visitor number, PIN, and QR code, then check in at reception when they arrive.
 
-- Public generic registration link
-- Auto-generated `registerNo`, PIN code, and QR token
-- Reception check-in by PIN, register number, or QR scan
-- Today dashboard for pending, checked-in, and future visitors
-- History filtering and Excel export
+It is designed for teams that want a practical visitor system without buying a complex enterprise platform or operating a separate database server.
+
+## Why Visitor Access
+
+Most small offices do not need a heavy visitor management suite. They need a clean, reliable way to answer a few everyday questions:
+
+- Who is expected today?
+- Who has already arrived?
+- Who is still waiting to check in?
+- Who visited last week, last month, or this year?
+- Can reception export the visitor log when needed?
+
+Visitor Access focuses on exactly that.
+
+## Key features
+
+### Public visitor registration
+
+Share one generic registration link with guests, contractors, interviewees, delivery partners, or customers. Visitors fill in their details before arrival using any modern browser.
+
+After submission, the system creates a visitor pass with:
+
+- a unique visitor number
+- a short PIN code
+- a QR code for reception check-in
+- the planned visit date and host name
+
+### Reception check-in
+
+Reception staff can check visitors in quickly by:
+
+- entering the PIN
+- entering the visitor number
+- scanning the QR code with a tablet or front-desk device
+
+The reception page shows a live view of today's expected visitors, checked-in visitors, and future registrations.
+
+### Admin dashboard
+
+The admin dashboard gives front desk or office managers a simple operational view:
+
+- today's visitor queue
+- visitor history search
+- status filtering
+- summary statistics
+- Excel export for reporting and audit records
+- configurable site title, welcome message, logo, PIN length, and check-in options
+
+### Simple deployment
+
+Visitor Access is built for self-hosted deployment:
+
+- no external database server
+- no Docker requirement
 - SQLite single-file storage
-- Session-based admin authentication
-- Legacy endpoints may still exist for backward compatibility, but the main flow is SQLite only
+- browser-based user interface
+- suitable for Windows or Linux server deployment
+
+The application stores live data in a local SQLite database file, making backup and migration straightforward.
+
+## Typical use cases
+
+Visitor Access is suitable for:
+
+- offices with around 20 to 200 staff
+- front desks that currently use paper forms or Excel sheets
+- companies that need a simple visitor log
+- internal server deployment inside a company network
+- reception tablets or iPads used as check-in stations
+- sites that want a lightweight visitor system before investing in enterprise access-control integration
+
+## Visitor journey
+
+1. A visitor opens the public registration page.
+2. The visitor enters their name, company, contact details, host name, visit purpose, and planned visit date.
+3. The system creates a visitor number, PIN, and QR code.
+4. The visitor arrives at reception.
+5. Reception checks the visitor in by PIN, visitor number, or QR scan.
+6. The visitor appears in the checked-in list.
+7. Reception or admin users can search, filter, and export records later.
 
 ## Main pages
 
-- `/` Public registration form
-- `/result/:registerNo` Registration result page
-- `/reception` Front desk check-in page
-- `/admin` Admin dashboard
+| Page | Purpose |
+| --- | --- |
+| `/` | Public visitor registration form |
+| `/result/:registerNo` | Visitor pass page with number, PIN, and QR code |
+| `/reception` | Front desk check-in page |
+| `/admin` | Admin dashboard and reporting |
 
 ## Quick start
 
-1. Install Node.js `22.13.0` or newer.
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the app:
-   ```bash
-   npm start
-   ```
-3. Open these pages:
-   - `http://localhost:3001/`
-   - `http://localhost:3001/reception`
-   - `http://localhost:3001/admin`
+### Requirements
 
-Default admin credentials:
+- Node.js `22.13.0` or newer
+- Windows, Linux, or macOS
+- A modern browser for users and reception staff
 
-- Username: `admin`
-- Password: `123456`
-- Admin login uses username/password only. The old PIN-only admin login is no longer supported.
+### Install and run
 
-## Data files
+```bash
+npm install
+npm start
+```
 
-- `data/visitor.db` is the SQLite database
-- Live public/admin settings are stored in SQLite `app_settings`
+Then open:
 
-## API summary
+- Public registration: `http://localhost:3001/`
+- Reception desk: `http://localhost:3001/reception`
+- Admin dashboard: `http://localhost:3001/admin`
 
-### Public
+Default admin account:
 
-- `GET /api/public/config`
-- `GET /api/welcome-message`
-- `POST /api/registrations`
-- `GET /api/registrations/:registerNo`
+```text
+Username: admin
+Password: 123456
+```
 
-### Reception
+Change the default admin password before using the system in a real office environment.
 
-- `GET /api/reception/today`
-- `POST /api/checkin/by-pin`
-- `POST /api/checkin/by-qr`
-- `POST /api/checkout/:id`
+## Data and backup
 
-### Admin
+Visitor Access uses SQLite as its live datastore.
 
-- `POST /api/admin/login`
-- `POST /api/admin/logout`
-- `GET /api/admin/session`
-- `GET /api/admin/dashboard/today`
-- `GET /api/admin/visitors`
-- `GET /api/admin/stats/summary`
-- `GET /api/admin/export.xlsx`
-- `PATCH /api/admin/visitors/:id/void`
-- `GET /api/admin/settings`
-- `PUT /api/admin/settings`
+- Database file: `data/visitor.db`
+- Public and admin settings are stored in SQLite
+- No MySQL, PostgreSQL, Redis, or external database service is required
 
-### Legacy compatibility
+For backup, stop the application or ensure no writes are in progress, then copy the `data/visitor.db` file to a secure location.
 
-These routes still work, but they are deprecated:
+## Export and reporting
 
-- `POST /api/check-in`
-- `POST /api/check-out`
-- `GET /api/admin/stats`
-- `GET /api/admin/visitors/current`
-- `GET /api/admin/visitors/history`
-- `POST /api/admin/clear-visitors`
-- `POST /api/admin/generate-test-visitors`
-- `POST /api/admin/anonymize`
-- `GET /api/admin/config`
-- `PUT /api/admin/config`
-- `POST /api/admin/change-pin`
-- `PUT /api/admin/logo`
-- `GET /api/admin/security`
+The admin dashboard can export visitor records to Excel for:
 
-The legacy admin config routes require a valid admin session and should not be used in new code. The new supported admin control surface is `GET /api/admin/settings` and `PUT /api/admin/settings`.
-The legacy `POST /api/admin/change-pin` route is disabled and returns `410 Gone`.
+- monthly visitor reports
+- annual visitor logs
+- compliance checks
+- reception handover records
+- internal audit support
+
+Visitor records can be filtered by date range, status, and keyword before export.
+
+## Security notes
+
+Visitor Access includes basic security controls suitable for a lightweight internal office system:
+
+- admin username/password login
+- session cookie based admin access
+- input validation
+- request rate limiting
+- local SQLite storage
+- no PIN-only admin login
+
+For public internet exposure, place the application behind HTTPS and your normal firewall, reverse proxy, or access-control layer.
+
+## Configuration
+
+Admin users can manage common site settings from the dashboard, including:
+
+- site title
+- welcome message
+- logo path
+- PIN length
+- data retention period
+- QR check-in availability
+- PIN check-in availability
+
+## API overview
+
+Most users do not need the API directly. The main supported API groups are:
+
+- public registration APIs
+- reception check-in APIs
+- authenticated admin dashboard APIs
+- Excel export API
+
+For integration work, inspect the route files under `src/routes/`.
 
 ## Development
 
-- `npm test` runs the full test suite
-- `npm run init` initializes the app and seeds the default admin account
+```bash
+npm test
+npm run dev
+```
 
-## Notes
+Useful scripts:
 
-- No external database server is required
-- No Docker is required
-- The app is designed around SQLite and does not rely on a live JSON store
+- `npm start` - start the application
+- `npm run dev` - start with nodemon
+- `npm test` - run the test suite
+- `npm run init` - initialize data folders and seed the default admin account
+
+## Project positioning
+
+Visitor Access is intentionally small and focused. It is not an enterprise access-control platform, HR system, or full security suite. It is a practical self-hosted visitor registration and reception check-in system for organizations that need something cleaner than paper or Excel, but simpler than a large commercial platform.
