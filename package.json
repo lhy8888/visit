@@ -1,6 +1,6 @@
 {
   "name": "visitor-access",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "lhy8888",
   "description": "Lightweight self-hosted visitor registration and reception check-in system for small offices.",
   "main": "server.js",
