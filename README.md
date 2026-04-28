@@ -130,6 +130,22 @@ npm run dist:win
 The packaged installer is designed for GitHub Releases and produces a `Visit-Access-Setup-<version>.exe` file.
 For development or internal use, `npm install` + `npm start` is still the simplest path.
 
+## Ubuntu deployment
+
+If you want to run Visitor Access on Ubuntu as a `systemd` service, use the Ubuntu guide:
+
+- [UBUNTU.md](./UBUNTU.md)
+
+Quick commands:
+
+```bash
+sudo bash scripts/ubuntu/install.sh
+sudo bash scripts/ubuntu/update.sh
+sudo bash scripts/ubuntu/uninstall.sh
+```
+
+Use `sudo bash scripts/ubuntu/uninstall.sh --purge` if you also want to remove the stored SQLite data and logs.
+
 ## Project positioning
 
 Visitor Access is intentionally small and focused. It is not an enterprise access-control platform, HR system, or full security suite. It is a practical self-hosted visitor registration and reception check-in system for organizations that want something cleaner than paper or Excel, but simpler than a large commercial platform.

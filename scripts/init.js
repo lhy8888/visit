@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { assertNodeRuntime } = require('../src/utils/runtime');
+const config = require('../src/config/config');
 
 assertNodeRuntime();
 const { openDatabase, closeDatabase } = require('../src/db/sqlite');
@@ -15,9 +16,9 @@ const AdminUserRepository = require('../src/repositories/AdminUserRepository');
 
 console.log('Initializing visitor management app...\n');
 
-const dataDir = path.join(__dirname, '..', 'data');
-const logsDir = path.join(__dirname, '..', 'logs');
-const imagesDir = path.join(__dirname, '..', 'public', 'images');
+const dataDir = config.DATA_DIR;
+const logsDir = path.dirname(config.LOG_FILE);
+const imagesDir = config.UPLOAD_DIR;
 
 function ensureDirectoryExists(dirPath, description) {
   if (!fs.existsSync(dirPath)) {
@@ -66,8 +67,8 @@ try {
   console.log('\nInitialization complete.');
   console.log('\nNext steps:');
   console.log('1. Review settings in the admin panel at /admin');
-  console.log('2. Add your logo to public/images/logo.svg');
-  console.log('3. SQLite database visitor.db is ready in data/');
+  console.log(`2. Add your logo to ${path.join(imagesDir, 'logo.svg')}`);
+  console.log(`3. SQLite database visitor.db is ready in ${dataDir}/`);
   console.log('4. Start the app with npm start');
   console.log('5. Default admin account: admin / 123456');
 } catch (error) {
