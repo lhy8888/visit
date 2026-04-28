@@ -139,9 +139,16 @@ If you want to run Visitor Access on Ubuntu as a `systemd` service, use the Ubun
 Quick commands:
 
 ```bash
+sudo npm run ubuntu:bootstrap -- --repo https://github.com/lhy8888/visit.git
 sudo bash scripts/ubuntu/install.sh
 sudo bash scripts/ubuntu/update.sh
 sudo bash scripts/ubuntu/uninstall.sh
+```
+
+For a one-step GitHub bootstrap, use:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash -s -- --repo https://github.com/lhy8888/visit.git
 ```
 
 Use `sudo bash scripts/ubuntu/uninstall.sh --purge` if you also want to remove the stored SQLite data and logs.

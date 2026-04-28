@@ -23,7 +23,13 @@ cd /opt/visitor-access
 
 ## Install
 
-Run:
+If you want to fetch the app from GitHub and install it in one step, run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash -s -- --repo https://github.com/lhy8888/visit.git
+```
+
+If you already cloned the repository locally, run:
 
 ```bash
 sudo bash scripts/ubuntu/install.sh
@@ -32,6 +38,7 @@ sudo bash scripts/ubuntu/install.sh
 If you prefer npm wrappers:
 
 ```bash
+sudo npm run ubuntu:bootstrap -- --repo https://github.com/lhy8888/visit.git
 sudo npm run ubuntu:install
 sudo npm run ubuntu:update
 sudo npm run ubuntu:uninstall
@@ -59,7 +66,7 @@ sudo bash scripts/ubuntu/update.sh
 The update script:
 
 - stops the service
-- pulls the latest `git` changes
+- pulls the latest `git` changes from the GitHub remote
 - reinstalls dependencies
 - restarts the service
 
@@ -77,7 +84,7 @@ Remove the service and stored data:
 sudo bash scripts/ubuntu/uninstall.sh --purge
 ```
 
-The default uninstall keeps the SQLite database and log files.
+The default uninstall keeps the cloned application directory, SQLite database, log files, and uploads.
 
 ## Service commands
 

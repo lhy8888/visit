@@ -39,6 +39,7 @@ rm -f "${ENV_FILE}"
 systemctl daemon-reload
 
 if [[ "${PURGE_DATA}" -eq 1 ]]; then
+  rm -rf "${APP_DIR}"
   rm -rf "${DATA_DIR}" "${LOG_DIR}" "${UPLOAD_DIR}"
   if id -u "${SERVICE_NAME}" >/dev/null 2>&1; then
     userdel "${SERVICE_NAME}" || true
@@ -49,6 +50,7 @@ if [[ "${PURGE_DATA}" -eq 1 ]]; then
   echo "Application data, logs, uploads, and system user removed."
 else
   echo "Service removed. Data was kept in:"
+  echo "  ${APP_DIR}"
   echo "  ${DATA_DIR}"
   echo "  ${LOG_DIR}"
   echo "  ${UPLOAD_DIR}"
@@ -56,4 +58,4 @@ else
 fi
 
 echo "Visitor Access uninstalled from systemd."
-echo "Source checkout left untouched at: ${APP_DIR}"
+echo "Application checkout path: ${APP_DIR}"
