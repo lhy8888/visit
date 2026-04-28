@@ -20,11 +20,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
     "audit": "npm audit",
-    "dist:win": "electron-builder --win nsis --publish never",
-    "ubuntu:bootstrap": "bash scripts/ubuntu/bootstrap.sh",
-    "ubuntu:install": "bash scripts/ubuntu/install.sh",
-    "ubuntu:update": "bash scripts/ubuntu/update.sh",
-    "ubuntu:uninstall": "bash scripts/ubuntu/uninstall.sh"
+    "dist:win": "electron-builder --win nsis --publish never"
   },
   "engines": {
     "node": ">=22.13.0"

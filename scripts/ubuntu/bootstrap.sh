@@ -24,11 +24,7 @@ require_command() {
 usage() {
   cat <<'EOF'
 Usage:
-  sudo bash scripts/ubuntu/bootstrap.sh [--repo URL] [--branch NAME] [--dir PATH] [--force]
-
-Examples:
-  sudo bash scripts/ubuntu/bootstrap.sh --repo https://github.com/lhy8888/visit.git
-  curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash -s -- --repo https://github.com/lhy8888/visit.git
+  curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash
 EOF
 }
 
@@ -38,62 +34,15 @@ require_command node
 require_command npm
 require_command systemctl
 
-REPO_URL="${VISITOR_ACCESS_REPO_URL:-${DEFAULT_REPO_URL}}"
-BRANCH="${VISITOR_ACCESS_BRANCH:-${DEFAULT_BRANCH}}"
-APP_DIR="${VISITOR_ACCESS_APP_DIR:-${DEFAULT_APP_DIR}}"
-FORCE=0
-POSITIONAL_REPO_URL=""
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --repo)
-      if [[ $# -lt 2 ]]; then
-        echo "--repo requires a repository URL" >&2
-        exit 1
-      fi
-      REPO_URL="${2:-}"
-      shift 2
-      ;;
-    --branch)
-      if [[ $# -lt 2 ]]; then
-        echo "--branch requires a branch name" >&2
-        exit 1
-      fi
-      BRANCH="${2:-}"
-      shift 2
-      ;;
-    --dir)
-      if [[ $# -lt 2 ]]; then
-        echo "--dir requires a directory path" >&2
-        exit 1
-      fi
-      APP_DIR="${2:-}"
-      shift 2
-      ;;
-    --force)
-      FORCE=1
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      if [[ -z "${POSITIONAL_REPO_URL}" ]]; then
-        POSITIONAL_REPO_URL="$1"
-        shift
-      else
-        echo "Unknown argument: $1" >&2
-        usage >&2
-        exit 1
-      fi
-      ;;
-  esac
-done
-
-if [[ -n "${POSITIONAL_REPO_URL}" ]]; then
-  REPO_URL="${POSITIONAL_REPO_URL}"
+if [[ $# -gt 0 ]]; then
+  echo "This installer uses a fixed GitHub repository and a fixed install path." >&2
+  usage >&2
+  exit 1
 fi
+
+APP_DIR="${DEFAULT_APP_DIR}"
+BRANCH="${DEFAULT_BRANCH}"
+REPO_URL="${DEFAULT_REPO_URL}"
 
 if [[ -d "${APP_DIR}/.git" ]]; then
   echo "Updating existing checkout at ${APP_DIR}"
@@ -101,15 +50,9 @@ if [[ -d "${APP_DIR}/.git" ]]; then
   git -C "${APP_DIR}" checkout "${BRANCH}"
   git -C "${APP_DIR}" pull --ff-only origin "${BRANCH}"
 elif [[ -e "${APP_DIR}" ]]; then
-  if [[ "${FORCE}" -ne 1 ]]; then
-    echo "Target directory already exists and is not a git checkout: ${APP_DIR}" >&2
-    echo "Use --force to remove it before cloning." >&2
-    exit 1
-  fi
-
-  rm -rf "${APP_DIR}"
-  mkdir -p "$(dirname "${APP_DIR}")"
-  git clone --branch "${BRANCH}" "${REPO_URL}" "${APP_DIR}"
+  echo "Target directory already exists and is not a git checkout: ${APP_DIR}" >&2
+  echo "Remove it first, or run the purge uninstall command and retry." >&2
+  exit 1
 else
   mkdir -p "$(dirname "${APP_DIR}")"
   git clone --branch "${BRANCH}" "${REPO_URL}" "${APP_DIR}"
@@ -120,5 +63,5 @@ if [[ ! -f "${APP_DIR}/package.json" ]]; then
   exit 1
 fi
 
-echo "Starting application install from ${REPO_URL}..."
+echo "Starting application install from the fixed GitHub repository..."
 VISITOR_ACCESS_APP_DIR="${APP_DIR}" bash "${APP_DIR}/scripts/ubuntu/install.sh"

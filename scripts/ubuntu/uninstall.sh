@@ -23,7 +23,7 @@ for arg in "$@"; do
       ;;
     *)
       echo "Unknown argument: ${arg}" >&2
-      echo "Usage: sudo bash scripts/ubuntu/uninstall.sh [--purge]" >&2
+      echo "Usage: sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh [--purge]" >&2
       exit 1
       ;;
   esac

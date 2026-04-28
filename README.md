@@ -136,22 +136,21 @@ If you want to run Visitor Access on Ubuntu as a `systemd` service, use the Ubun
 
 - [UBUNTU.md](./UBUNTU.md)
 
-Quick commands:
+The recommended install is a single fixed-path GitHub bootstrap:
 
 ```bash
-sudo npm run ubuntu:bootstrap -- --repo https://github.com/lhy8888/visit.git
-sudo bash scripts/ubuntu/install.sh
-sudo bash scripts/ubuntu/update.sh
-sudo bash scripts/ubuntu/uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash
 ```
 
-For a one-step GitHub bootstrap, use:
+After installation, the app lives in `/opt/visitor-access`.
+
+Use these fixed-path commands for maintenance:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash -s -- --repo https://github.com/lhy8888/visit.git
+sudo bash /opt/visitor-access/scripts/ubuntu/update.sh
+sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh
+sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh --purge
 ```
-
-Use `sudo bash scripts/ubuntu/uninstall.sh --purge` if you also want to remove the stored SQLite data and logs.
 
 ## Project positioning
 

@@ -12,36 +12,12 @@ Visitor Access can run on Ubuntu as a `systemd` service.
 
 The scripts assume Node and npm are installed system-wide, so `node` and `npm` are available in `/usr/bin` or the current root shell `PATH`.
 
-## Recommended layout
-
-Clone the repository into `/opt/visitor-access`:
-
-```bash
-sudo git clone https://github.com/lhy8888/visit.git /opt/visitor-access
-cd /opt/visitor-access
-```
-
 ## Install
 
-If you want to fetch the app from GitHub and install it in one step, run:
+Recommended one-step install from GitHub. The installer always clones into `/opt/visitor-access`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash -s -- --repo https://github.com/lhy8888/visit.git
-```
-
-If you already cloned the repository locally, run:
-
-```bash
-sudo bash scripts/ubuntu/install.sh
-```
-
-If you prefer npm wrappers:
-
-```bash
-sudo npm run ubuntu:bootstrap -- --repo https://github.com/lhy8888/visit.git
-sudo npm run ubuntu:install
-sudo npm run ubuntu:update
-sudo npm run ubuntu:uninstall
+curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash
 ```
 
 What the installer does:
@@ -60,7 +36,7 @@ If you need to change any runtime value later, edit `/etc/visitor-access/visitor
 Run:
 
 ```bash
-sudo bash scripts/ubuntu/update.sh
+sudo bash /opt/visitor-access/scripts/ubuntu/update.sh
 ```
 
 The update script:
@@ -75,13 +51,13 @@ The update script:
 Remove the service only:
 
 ```bash
-sudo bash scripts/ubuntu/uninstall.sh
+sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh
 ```
 
 Remove the service and stored data:
 
 ```bash
-sudo bash scripts/ubuntu/uninstall.sh --purge
+sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh --purge
 ```
 
 The default uninstall keeps the cloned application directory, SQLite database, log files, and uploads.
