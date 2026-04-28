@@ -100,7 +100,7 @@ app.get('/health', (req, res) => {
     message: 'Service en ligne',
     timestamp: new Date().toISOString(),
     environment: config.NODE_ENV,
-    version: '2.0.1'
+    version: '2.0.2'
   });
 });
 
@@ -111,7 +111,7 @@ app.get('/api', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Visitor management API',
-    version: '2.0.1',
+    version: '2.0.2',
     endpoints: {
       config: {
         'GET /api/public': 'Get public configuration',
@@ -174,7 +174,7 @@ const startServer = async () => {
       logger.info('Server started', {
         port: config.PORT,
         environment: config.NODE_ENV,
-        version: '2.0.1',
+        version: '2.0.2',
         timestamp: new Date().toISOString()
       });
 

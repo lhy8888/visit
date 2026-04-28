@@ -1,6 +1,6 @@
 {
   "name": "visitor-access",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "author": "lhy8888",
   "description": "Lightweight self-hosted visitor registration and reception check-in system for small offices.",
   "main": "server.js",
@@ -20,7 +20,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
     "audit": "npm audit",
-    "dist:win": "electron-builder --win nsis"
+    "dist:win": "electron-builder --win nsis --publish never"
   },
   "engines": {
     "node": ">=22.13.0"
