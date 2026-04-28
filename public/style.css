@@ -1131,6 +1131,38 @@ body.admin-page .admin-table {
   table-layout: fixed;
 }
 
+body.admin-page .admin-table col.col-visitor {
+  width: 24%;
+}
+
+body.admin-page .admin-table col.col-register {
+  width: 14%;
+}
+
+body.admin-page .admin-table col.col-person {
+  width: 16%;
+}
+
+body.admin-page .admin-table col.col-date {
+  width: 12%;
+}
+
+body.admin-page .admin-table col.col-status {
+  width: 8%;
+}
+
+body.admin-page .admin-table col.col-in {
+  width: 8%;
+}
+
+body.admin-page .admin-table col.col-out {
+  width: 8%;
+}
+
+body.admin-page .admin-table col.col-action {
+  width: 10%;
+}
+
 body.admin-page .admin-table thead th {
   padding: 5px 8px;
   font-size: 0.66rem;
@@ -1159,16 +1191,18 @@ body.admin-page .pill {
 }
 
 body.admin-page .table-visitor {
-  gap: 1px;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
 }
 
 body.admin-page .table-visitor strong {
-  display: block;
   font-size: 0.86rem;
   line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
 }
 
 body.admin-page .table-ref {
@@ -1197,70 +1231,6 @@ body.admin-page .table-person {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-body.admin-page .admin-table tbody td:nth-child(1) {
-  width: 14%;
-}
-
-body.admin-page .admin-table thead th:nth-child(1) {
-  width: 14%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(2) {
-  width: 14%;
-}
-
-body.admin-page .admin-table thead th:nth-child(2) {
-  width: 14%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(3) {
-  width: 17%;
-}
-
-body.admin-page .admin-table thead th:nth-child(3) {
-  width: 17%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(4) {
-  width: 12%;
-}
-
-body.admin-page .admin-table thead th:nth-child(4) {
-  width: 12%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(5) {
-  width: 10%;
-}
-
-body.admin-page .admin-table thead th:nth-child(5) {
-  width: 10%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(6) {
-  width: 8%;
-}
-
-body.admin-page .admin-table thead th:nth-child(6) {
-  width: 8%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(7) {
-  width: 8%;
-}
-
-body.admin-page .admin-table thead th:nth-child(7) {
-  width: 8%;
-}
-
-body.admin-page .admin-table tbody td:nth-child(8) {
-  width: 12%;
-}
-
-body.admin-page .admin-table thead th:nth-child(8) {
-  width: 12%;
 }
 
 body.admin-page .table-action button {
