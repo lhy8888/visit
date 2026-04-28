@@ -100,8 +100,12 @@ const requestLogger = (req, res, next) => {
 const validateHeaders = (req, res, next) => {
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
     const contentType = req.get('Content-Type');
+    const contentLength = Number.parseInt(req.get('Content-Length'), 10);
+    const hasBody = Number.isFinite(contentLength) && contentLength > 0;
+    const requestPath = String(req.originalUrl || '');
+    const isLogoUpload = /(^|\/)logo(\/|$)/.test(requestPath);
 
-    if (req.originalUrl.includes('/logo')) {
+    if (isLogoUpload) {
       if (!contentType || (!contentType.includes('multipart/form-data') && !contentType.includes('application/json'))) {
         return res.status(400).json({
           success: false,
@@ -110,7 +114,7 @@ const validateHeaders = (req, res, next) => {
           }
         });
       }
-    } else if (!contentType || !contentType.includes('application/json')) {
+    } else if (hasBody && (!contentType || !contentType.includes('application/json'))) {
       return res.status(400).json({
         success: false,
         error: {

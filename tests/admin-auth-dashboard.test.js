@@ -88,6 +88,25 @@ describe('Admin authentication and dashboard', () => {
     expect(sessionResponse.body.data.session.user.username).toBe('admin');
   });
 
+  test('logs out and invalidates the admin session', async () => {
+    const agent = await loginAsAdmin();
+
+    const logoutResponse = await agent
+      .post('/api/admin/logout')
+      .expect(200);
+
+    expect(logoutResponse.body.success).toBe(true);
+    expect(Array.isArray(logoutResponse.headers['set-cookie'])).toBe(true);
+    expect(logoutResponse.headers['set-cookie'][0]).toContain('visitor_admin_session=');
+
+    const sessionResponse = await agent
+      .get('/api/admin/session')
+      .expect(200);
+
+    expect(sessionResponse.body.data.authenticated).toBe(false);
+    expect(sessionResponse.body.data.session).toBeNull();
+  });
+
   test('shows today dashboard, history filters, export and void actions', async () => {
     const agent = await loginAsAdmin();
 

@@ -2,7 +2,11 @@ const AuthService = require('../services/AuthService');
 const DashboardService = require('../services/DashboardService');
 const ExportService = require('../services/ExportService');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { extractAdminSessionToken, getAdminSessionCookieName } = require('../utils/adminAuth');
+const {
+  extractAdminSessionToken,
+  getAdminSessionCookieName,
+  getAdminSessionCookieOptions
+} = require('../utils/adminAuth');
 
 class AdminController {
   constructor(options = {}) {
@@ -36,9 +40,7 @@ class AdminController {
   logout = asyncHandler(async (req, res) => {
     const token = extractAdminSessionToken(req);
     await this.authService.logout(token);
-    res.clearCookie(getAdminSessionCookieName(), {
-      path: '/'
-    });
+    res.clearCookie(getAdminSessionCookieName(), getAdminSessionCookieOptions());
 
     res.status(200).json({
       success: true,
