@@ -93,49 +93,49 @@
             <tbody id="visitor-table-body"></tbody>
           </table>
         </div>
-      </section>
 
-      <section class="card admin-section">
-        <div class="admin-header">
-          <div>
-            <p class="eyebrow">History</p>
-            <h2>Filter</h2>
-          </div>
-          <div class="admin-actions">
-            <button id="export-button" type="button" class="secondary">Export Excel</button>
-          </div>
-        </div>
-
-        <form id="history-form" class="form-grid">
-          <div class="field">
-            <label for="history-from">From</label>
-            <input id="history-from" name="from" type="date">
-          </div>
-          <div class="field">
-            <label for="history-to">To</label>
-            <input id="history-to" name="to" type="date">
-          </div>
-          <div class="field">
-            <label for="history-status">Status</label>
-            <select id="history-status" name="status">
-              <option value="">All statuses</option>
-              <option value="registered">Registered</option>
-              <option value="checked_in">Checked in</option>
-              <option value="checked_out">Checked out</option>
-              <option value="void">Void</option>
-            </select>
-          </div>
-          <div class="field full">
-            <label for="history-keyword">Keyword</label>
-            <input id="history-keyword" name="keyword" placeholder="Visitor name, company, visited person, register no...">
-          </div>
-          <div class="field full">
+        <div class="history-strip">
+          <div class="admin-header compact">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2>Filters</h2>
+            </div>
             <div class="admin-actions">
-              <button type="submit">Apply</button>
-              <button id="history-reset" type="button" class="secondary">Reset</button>
+              <button id="export-button" type="button" class="secondary">Export Excel</button>
             </div>
           </div>
-        </form>
+
+          <form id="history-form" class="form-grid history-form">
+            <div class="field">
+              <label for="history-from">From</label>
+              <input id="history-from" name="from" type="date">
+            </div>
+            <div class="field">
+              <label for="history-to">To</label>
+              <input id="history-to" name="to" type="date">
+            </div>
+            <div class="field">
+              <label for="history-status">Status</label>
+              <select id="history-status" name="status">
+                <option value="">All statuses</option>
+                <option value="registered">Registered</option>
+                <option value="checked_in">Checked in</option>
+                <option value="checked_out">Checked out</option>
+                <option value="void">Void</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="history-keyword">Keyword</label>
+              <input id="history-keyword" name="keyword" placeholder="Visitor name, company, visited person, register no...">
+            </div>
+            <div class="field full">
+              <div class="admin-actions">
+                <button type="submit">Apply</button>
+                <button id="history-reset" type="button" class="secondary">Reset</button>
+              </div>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section class="card admin-section">
@@ -144,9 +144,68 @@
             <p class="eyebrow">Settings</p>
             <h2>Settings</h2>
           </div>
+          <div class="admin-actions">
+            <button id="settings-save" type="submit" form="settings-form">Save settings</button>
+          </div>
         </div>
 
-        <div id="settings-list" class="settings-list"></div>
+        <form id="settings-form" class="form-grid settings-form">
+          <div class="field full">
+            <label for="siteTitle">Site title</label>
+            <input id="siteTitle" name="siteTitle" type="text" autocomplete="off">
+          </div>
+          <div class="field full">
+            <label for="welcomeMessage">Welcome message</label>
+            <textarea id="welcomeMessage" name="welcomeMessage" rows="2"></textarea>
+          </div>
+          <div class="field full logo-field">
+            <label for="logoUpload">Logo file</label>
+            <input id="logoUpload" name="logoUpload" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/svg+xml">
+            <input id="logoPath" name="logoPath" type="hidden">
+            <div class="logo-preview-row">
+              <img id="logoPreview" class="logo-preview" alt="Current logo preview">
+              <p id="logoPathNote" class="helper compact"></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="defaultTimezone">Timezone</label>
+            <select id="defaultTimezone" name="defaultTimezone">
+              <option value="Europe/London">Europe/London</option>
+              <option value="UTC">UTC</option>
+              <option value="Europe/Paris">Europe/Paris</option>
+              <option value="Europe/Berlin">Europe/Berlin</option>
+              <option value="Europe/Madrid">Europe/Madrid</option>
+              <option value="America/New_York">America/New_York</option>
+              <option value="America/Chicago">America/Chicago</option>
+              <option value="America/Los_Angeles">America/Los_Angeles</option>
+              <option value="Asia/Dubai">Asia/Dubai</option>
+              <option value="Asia/Singapore">Asia/Singapore</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="pinLength">PIN length</label>
+            <input id="pinLength" name="pinLength" type="number" min="4" max="6" step="1" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="dataRetentionDays">Data retention days</label>
+            <input id="dataRetentionDays" name="dataRetentionDays" type="number" min="1" max="365" step="1" inputmode="numeric">
+          </div>
+          <div class="field full toggle-field">
+            <label class="settings-toggle" for="enableQrCheckin">
+              <input id="enableQrCheckin" name="enableQrCheckin" type="checkbox">
+              <span>Enable QR check-in</span>
+            </label>
+          </div>
+          <div class="field full toggle-field">
+            <label class="settings-toggle" for="enablePinCheckin">
+              <input id="enablePinCheckin" name="enablePinCheckin" type="checkbox">
+              <span>Enable PIN check-in</span>
+            </label>
+          </div>
+          <div class="field full">
+            <p class="helper compact">These values apply to the public page, result page, and reception flow.</p>
+          </div>
+        </form>
       </section>
     </section>
   </main>

@@ -233,4 +233,54 @@ describe('Admin authentication and dashboard', () => {
 
     expect(restoredSettings.body.data.siteTitle).toBe(originalSettings.siteTitle);
   });
+
+  test('uploads a logo image and persists the logo path', async () => {
+    const agent = await loginAsAdmin();
+    const originalSettingsResponse = await agent
+      .get('/api/admin/settings')
+      .expect(200);
+    const originalSettings = originalSettingsResponse.body.data;
+
+    const logoFixturePath = path.join(testDataDir, 'test-logo.svg');
+    await fs.writeFile(logoFixturePath, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40"><rect width="120" height="40" fill="#173e6f"/><text x="14" y="26" fill="#ffffff" font-family="Arial" font-size="16">LOGO</text></svg>');
+
+    let uploadedLogoPath = null;
+
+    try {
+      const uploadResponse = await agent
+        .post('/api/admin/logo')
+        .attach('logo', logoFixturePath)
+        .expect(200);
+
+      uploadedLogoPath = uploadResponse.body.data.logoPath;
+      expect(uploadedLogoPath).toMatch(/^\/images\/logo-/);
+
+      const refreshedSettings = await agent
+        .get('/api/admin/settings')
+        .expect(200);
+
+      expect(refreshedSettings.body.data.logoPath).toBe(uploadedLogoPath);
+    } finally {
+      await agent
+        .put('/api/admin/settings')
+        .send({
+          siteTitle: originalSettings.siteTitle,
+          welcomeMessage: originalSettings.welcomeMessage,
+          logoPath: originalSettings.logoPath,
+          defaultTimezone: originalSettings.defaultTimezone,
+          pinLength: originalSettings.pinLength,
+          dataRetentionDays: originalSettings.dataRetentionDays,
+          enableQrCheckin: originalSettings.enableQrCheckin,
+          enablePinCheckin: originalSettings.enablePinCheckin
+        })
+        .expect(200);
+
+      await fs.rm(logoFixturePath, { force: true });
+
+      if (uploadedLogoPath) {
+        const uploadedFilePath = path.join(__dirname, '..', 'public', uploadedLogoPath.replace(/^\/images\//, 'images/'));
+        await fs.rm(uploadedFilePath, { force: true });
+      }
+    }
+  });
 });

@@ -44,9 +44,47 @@ function toNumericSetting(value, fallback = null) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
-function buildWindowStart(referenceDate, offsetDays, timeZone) {
-  const start = new Date(referenceDate.getTime() - offsetDays * 24 * 60 * 60 * 1000);
-  return normalizeDateOnly(start, timeZone);
+function cloneDate(date) {
+  return new Date(date.getTime());
+}
+
+function startOfDay(date) {
+  const copy = cloneDate(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function startOfWeek(date) {
+  const copy = startOfDay(date);
+  const offset = (copy.getDay() + 6) % 7;
+  copy.setDate(copy.getDate() - offset);
+  return copy;
+}
+
+function startOfMonth(date) {
+  const copy = startOfDay(date);
+  copy.setDate(1);
+  return copy;
+}
+
+function startOfYear(date) {
+  const copy = startOfDay(date);
+  copy.setMonth(0, 1);
+  return copy;
+}
+
+function buildPeriodStartKey(referenceDate, period, timeZone) {
+  switch (period) {
+    case 'week':
+      return normalizeDateOnly(startOfWeek(referenceDate), timeZone);
+    case 'month':
+      return normalizeDateOnly(startOfMonth(referenceDate), timeZone);
+    case 'year':
+      return normalizeDateOnly(startOfYear(referenceDate), timeZone);
+    case 'today':
+    default:
+      return normalizeDateOnly(startOfDay(referenceDate), timeZone);
+  }
 }
 
 function extractArrivalDate(registration, timeZone) {
@@ -137,9 +175,9 @@ class DashboardService {
 
       const confirmedArrivals = visitors.filter((registration) => isConfirmedArrival(registration));
       const referenceKey = normalizeDateOnly(safeReferenceDate, timeZone) || new Date().toISOString().slice(0, 10);
-      const weekStartKey = buildWindowStart(safeReferenceDate, 6, timeZone);
-      const monthStartKey = buildWindowStart(safeReferenceDate, 29, timeZone);
-      const yearStartKey = buildWindowStart(safeReferenceDate, 364, timeZone);
+      const weekStartKey = buildPeriodStartKey(safeReferenceDate, 'week', timeZone);
+      const monthStartKey = buildPeriodStartKey(safeReferenceDate, 'month', timeZone);
+      const yearStartKey = buildPeriodStartKey(safeReferenceDate, 'year', timeZone);
 
       const summary = confirmedArrivals.reduce((accumulator, registration) => {
         const arrivalDate = extractArrivalDate(registration, timeZone);
@@ -151,15 +189,15 @@ class DashboardService {
           accumulator.today += 1;
         }
 
-        if (arrivalDate >= weekStartKey) {
+        if (arrivalDate >= weekStartKey && arrivalDate <= referenceKey) {
           accumulator.week += 1;
         }
 
-        if (arrivalDate >= monthStartKey) {
+        if (arrivalDate >= monthStartKey && arrivalDate <= referenceKey) {
           accumulator.month += 1;
         }
 
-        if (arrivalDate >= yearStartKey) {
+        if (arrivalDate >= yearStartKey && arrivalDate <= referenceKey) {
           accumulator.year += 1;
         }
 

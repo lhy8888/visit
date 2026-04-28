@@ -7,6 +7,7 @@ const registrationSubmitButton = document.getElementById('registration-submit-bu
 const statusMessage = document.getElementById('status-message');
 const scannerVideo = document.getElementById('scanner-video');
 const siteLogo = document.getElementById('site-logo');
+const pageTitle = document.getElementById('page-title');
 
 const SCAN_COOLDOWN_MS = 3500;
 
@@ -74,11 +75,25 @@ async function loadPublicConfig() {
   try {
     const response = await fetch('/api/public/config');
     if (!response.ok) {
+      if (pageTitle) {
+        pageTitle.textContent = 'Visitor Access';
+      }
+      if (document && typeof document.title === 'string') {
+        document.title = 'Reception - Visitor Access';
+      }
       return;
     }
 
     const payload = await response.json();
     const config = payload && payload.data ? payload.data : {};
+
+    const configuredTitle = config.siteTitle || 'Visitor Access';
+    if (pageTitle) {
+      pageTitle.textContent = configuredTitle;
+    }
+    if (document && typeof document.title === 'string') {
+      document.title = `Reception - ${configuredTitle}`;
+    }
 
     if (config.logoPath && siteLogo) {
       siteLogo.hidden = false;

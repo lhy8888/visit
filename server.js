@@ -140,7 +140,8 @@ app.get('/api', (req, res) => {
         'GET /api/admin/export.xlsx': 'Export visitors as Excel',
         'PATCH /api/admin/visitors/:id/void': 'Void a visitor record',
         'GET /api/admin/settings': 'Get admin settings',
-        'PUT /api/admin/settings': 'Update admin settings'
+        'PUT /api/admin/settings': 'Update admin settings',
+        'POST /api/admin/logo': 'Upload a logo image'
       }
     }
   });

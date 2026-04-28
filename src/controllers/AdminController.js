@@ -1,7 +1,7 @@
 const AuthService = require('../services/AuthService');
 const DashboardService = require('../services/DashboardService');
 const ExportService = require('../services/ExportService');
-const { asyncHandler } = require('../middleware/errorHandler');
+const { AppError, asyncHandler } = require('../middleware/errorHandler');
 const {
   extractAdminSessionToken,
   getAdminSessionCookieName,
@@ -26,7 +26,7 @@ class AdminController {
 
     res.status(200).json({
       success: true,
-      message: 'Authentification réussie',
+      message: 'Authentification r\u00e9ussie',
       data: {
         user: result.user,
         session: result.session
@@ -44,7 +44,7 @@ class AdminController {
 
     res.status(200).json({
       success: true,
-      message: 'Déconnexion réussie'
+      message: 'D\u00e9connexion r\u00e9ussie'
     });
   });
 
@@ -106,7 +106,7 @@ class AdminController {
 
     res.status(200).json({
       success: true,
-      message: 'Visiteur marqué comme annulé',
+      message: 'Visiteur marqu\u00e9 comme annul\u00e9',
       data: result.registration,
       meta: {
         alreadyVoided: result.alreadyVoided
@@ -128,7 +128,28 @@ class AdminController {
 
     res.status(200).json({
       success: true,
-      message: 'Paramètres mis à jour avec succès',
+      message: 'Param\u00e8tres mis \u00e0 jour avec succ\u00e8s',
+      data: settings
+    });
+  });
+
+  uploadLogo = asyncHandler(async (req, res) => {
+    if (!req.file) {
+      if (req.logoUploadError) {
+        throw new AppError(req.logoUploadError, 400);
+      }
+
+      throw new AppError('Logo file is required', 400);
+    }
+
+    const logoPath = `/images/${req.file.filename}`;
+    const settings = await this.dashboardService.updateSettings({
+      logoPath
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Logo uploaded successfully',
       data: settings
     });
   });

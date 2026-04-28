@@ -54,7 +54,7 @@ describe('Logo upload error handling', () => {
     fs.rmSync(testDataDir, { recursive: true, force: true });
   });
 
-  test('returns 404 for the removed logo upload route without a file', async () => {
+  test('returns 404 for the removed logo upload PUT route', async () => {
     const response = await adminAgent
       .put('/api/admin/logo')
       .send({})
@@ -63,20 +63,20 @@ describe('Logo upload error handling', () => {
     expect(response.body.success).toBe(false);
   });
 
-  test('returns 404 for the removed logo upload route with a file', async () => {
+  test('returns 400 when posting the logo route without a file', async () => {
     const response = await adminAgent
-      .put('/api/admin/logo')
-      .send({ logo: 'legacy-placeholder' })
-      .expect(404);
+      .post('/api/admin/logo')
+      .send({})
+      .expect(400);
 
     expect(response.body.success).toBe(false);
   });
 
-  test('returns 404 for POST on the removed logo upload route', async () => {
+  test('returns 400 when uploading an unsupported file type', async () => {
     const response = await adminAgent
       .post('/api/admin/logo')
-      .send({ logo: 'legacy-placeholder' })
-      .expect(404);
+      .attach('logo', txtPath)
+      .expect(400);
 
     expect(response.body.success).toBe(false);
   });
