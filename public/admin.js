@@ -295,10 +295,12 @@ function renderVisitorTable(items = [], mode = 'today') {
     const visitorName = document.createElement('strong');
     visitorName.textContent = visitorDisplayName(visitor);
     visitorCell.append(visitorName);
+    visitorCell.title = visitorName.textContent;
 
     const registerNoCell = document.createElement('td');
     registerNoCell.className = 'table-code';
     registerNoCell.textContent = visitorRegisterNo(visitor);
+    registerNoCell.title = registerNoCell.textContent;
 
     const personToVisitCell = document.createElement('td');
     personToVisitCell.className = 'table-person';
@@ -309,21 +311,26 @@ function renderVisitorTable(items = [], mode = 'today') {
       || visitor.host_name
       || visitor.personneVisitee
       || '-';
+    personToVisitCell.title = personToVisitCell.textContent;
 
     const dateCell = document.createElement('td');
     dateCell.textContent = formatDateOnly(
       visitor.scheduledDate || visitor.scheduled_date || visitor.registeredAt || visitor.registered_at
     );
+    dateCell.title = dateCell.textContent;
 
     const statusCell = document.createElement('td');
     const [statusLabel, tone] = visitorStatusLabel(visitor.status);
     statusCell.append(pill(statusLabel, tone));
+    statusCell.title = statusLabel;
 
     const timeline = visitorTimeline(visitor);
     const inCell = document.createElement('td');
     inCell.textContent = timeline.in;
+    inCell.title = timeline.in;
     const outCell = document.createElement('td');
     outCell.textContent = timeline.out;
+    outCell.title = timeline.out;
 
     const actionCell = document.createElement('td');
     actionCell.className = 'table-action';
@@ -339,8 +346,10 @@ function renderVisitorTable(items = [], mode = 'today') {
         });
       });
       actionCell.append(voidButton);
+      actionCell.title = 'Void visitor';
     } else {
       actionCell.textContent = '-';
+      actionCell.title = 'No action available';
     }
 
     row.append(visitorCell, registerNoCell, personToVisitCell, dateCell, statusCell, inCell, outCell, actionCell);
