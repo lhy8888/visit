@@ -51,6 +51,7 @@ app.use(sanitizeInput);
 /**
  * Static assets
  */
+app.use('/images', express.static(config.UPLOAD_DIR));
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**

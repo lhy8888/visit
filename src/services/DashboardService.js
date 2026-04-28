@@ -8,6 +8,15 @@ const { DEFAULT_TIME_ZONE, normalizeDateOnly } = require('../utils/registerNo');
 const DEFAULT_SITE_TITLE = 'Visitor Access';
 const DEFAULT_WELCOME_MESSAGE = 'Pre-register before you arrive.';
 
+function normalizeLogoPath(value) {
+  if (!value) {
+    return '/images/logo.svg';
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed === '/images/logo.png' ? '/images/logo.svg' : trimmed;
+}
+
 function toNullableString(value) {
   if (value === undefined || value === null) {
     return null;
@@ -254,7 +263,7 @@ class DashboardService {
     return {
       siteTitle: rawSettings.site_title || rawSettings.siteTitle || DEFAULT_SITE_TITLE,
       welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
-      logoPath: rawSettings.logo_path || rawSettings.logoPath || '/images/logo.png',
+      logoPath: normalizeLogoPath(rawSettings.logo_path || rawSettings.logoPath),
       defaultTimezone: rawSettings.default_timezone || rawSettings.defaultTimezone || DEFAULT_TIME_ZONE,
       pinLength: toNumericSetting(rawSettings.pin_length || rawSettings.pinLength, 6),
       dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 365),
@@ -316,7 +325,7 @@ class DashboardService {
     }
 
     if (Object.prototype.hasOwnProperty.call(normalized, 'logo_path')) {
-      normalized.logo_path = String(normalized.logo_path).trim();
+      normalized.logo_path = normalizeLogoPath(normalized.logo_path);
     }
 
     if (Object.prototype.hasOwnProperty.call(normalized, 'default_timezone')) {

@@ -1,6 +1,7 @@
 {
   "name": "visitor-access",
   "version": "2.0.0",
+  "author": "lhy8888",
   "description": "Lightweight self-hosted visitor registration and reception check-in system for small offices.",
   "main": "server.js",
   "scripts": {
@@ -9,6 +10,7 @@
     "start": "node server.js",
     "predev": "node scripts/check-runtime.js",
     "dev": "nodemon server.js",
+    "electron:dev": "electron electron/main.js",
     "preinit": "node scripts/check-runtime.js",
     "init": "node scripts/init.js",
     "postinstall": "npm run init",
@@ -17,10 +19,45 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
-    "audit": "npm audit"
+    "audit": "npm audit",
+    "dist:win": "electron-builder --win nsis"
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "build": {
+    "appId": "com.visit.access",
+    "productName": "Visit Access",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "scripts/check-runtime.js",
+      "server.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "Visit-Access-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "perMachine": false
+    }
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -36,6 +73,8 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "jsdom": "^26.1.0",

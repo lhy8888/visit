@@ -43,14 +43,14 @@
 
     <section id="dashboard" class="admin-grid admin-hidden">
       <section class="card admin-section">
-        <div class="admin-header">
-          <div>
-            <p class="eyebrow">Session</p>
-            <h2>Signed in</h2>
-            <p id="session-banner" class="admin-muted"></p>
-          </div>
-          <div class="admin-actions">
-            <button id="refresh-dashboard" type="button" class="secondary">Refresh</button>
+      <div class="admin-header">
+        <div>
+          <p class="eyebrow">Session</p>
+          <h2>Active session</h2>
+          <p id="session-banner" class="admin-muted"></p>
+        </div>
+        <div class="admin-actions">
+          <button id="refresh-dashboard" type="button" class="secondary">Refresh</button>
             <button id="logout-button" type="button" class="secondary">Sign out</button>
           </div>
         </div>
@@ -73,6 +73,7 @@
               <tr>
                 <th>Visitor</th>
                 <th>Register No</th>
+                <th>Person to visit</th>
                 <th>Date</th>
                 <th>Status</th>
                 <th>In</th>
@@ -117,7 +118,7 @@
           </div>
           <div class="field full">
             <label for="history-keyword">Keyword</label>
-            <input id="history-keyword" name="keyword" placeholder="Visitor name, company, host, register no...">
+            <input id="history-keyword" name="keyword" placeholder="Visitor name, company, person to visit, register no...">
           </div>
           <div class="field full">
             <div class="admin-actions">

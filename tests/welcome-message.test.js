@@ -22,7 +22,7 @@ describe('Welcome message and public settings', () => {
     settingsRepo = new SettingsRepository();
     await settingsRepo.set('welcome_message', 'Pre-register before you arrive.');
     await settingsRepo.set('site_title', 'Visitor Access');
-    await settingsRepo.set('logo_path', '/images/logo.png');
+    await settingsRepo.set('logo_path', '/images/logo.svg');
     await settingsRepo.set('default_timezone', 'UTC');
     await settingsRepo.set('pin_length', '6');
     await settingsRepo.set('data_retention_days', '30');
@@ -83,7 +83,7 @@ describe('Welcome message and public settings', () => {
     expect(response.body.data).toMatchObject({
       welcomeMessage: 'Pre-register before you arrive.',
       siteTitle: 'Visitor Access',
-      logoPath: '/images/logo.png',
+      logoPath: '/images/logo.svg',
       defaultTimezone: 'UTC',
       pinLength: 6
     });

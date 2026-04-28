@@ -227,7 +227,7 @@ function renderSettings(settings = {}) {
     ['Logo', settings.logoPath],
     ['Timezone', settings.defaultTimezone],
     ['PIN length', settings.pinLength],
-    ['Retention', settings.dataRetentionDays
+    ['Data retention', settings.dataRetentionDays
       ? (Number(settings.dataRetentionDays) >= 365 ? '1 year' : `${settings.dataRetentionDays} days`)
       : 'Not set'],
     ['QR check-in', settings.enableQrCheckin ? 'Enabled' : 'Disabled'],
@@ -276,7 +276,7 @@ function renderVisitorTable(items = [], mode = 'today') {
   if (!items.length) {
     const emptyRow = document.createElement('tr');
     const emptyCell = document.createElement('td');
-    emptyCell.colSpan = 7;
+    emptyCell.colSpan = 8;
     emptyCell.className = 'table-empty';
     emptyCell.textContent = mode === 'filtered'
       ? 'No records match the selected filters.'
@@ -296,8 +296,12 @@ function renderVisitorTable(items = [], mode = 'today') {
     visitorCell.append(visitorName);
 
     const registerNoCell = document.createElement('td');
-    registerNoCell.className = 'table-ref';
+    registerNoCell.className = 'table-code';
     registerNoCell.textContent = visitorRegisterNo(visitor);
+
+    const personToVisitCell = document.createElement('td');
+    personToVisitCell.className = 'table-person';
+    personToVisitCell.textContent = visitor.hostName || visitor.host_name || visitor.personneVisitee || '-';
 
     const dateCell = document.createElement('td');
     dateCell.textContent = formatDateOnly(
@@ -332,7 +336,7 @@ function renderVisitorTable(items = [], mode = 'today') {
       actionCell.textContent = '-';
     }
 
-    row.append(visitorCell, registerNoCell, dateCell, statusCell, inCell, outCell, actionCell);
+    row.append(visitorCell, registerNoCell, personToVisitCell, dateCell, statusCell, inCell, outCell, actionCell);
     visitorTableBody.append(row);
   });
 }
@@ -403,7 +407,7 @@ async function login(event) {
 
     await loadSession();
     await loadDashboard();
-    setStatus('Signed in.');
+    setStatus('');
   } catch (error) {
     setStatus(error.message || 'Login failed', true);
   } finally {
@@ -434,7 +438,7 @@ async function refreshDashboard() {
     }
 
     await loadDashboard();
-    setStatus('Refreshed.');
+    setStatus('');
   } catch (error) {
     setStatus(error.message || 'Unable to refresh dashboard', true);
   }

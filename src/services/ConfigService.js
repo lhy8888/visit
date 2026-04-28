@@ -6,6 +6,15 @@ const { DEFAULT_TIME_ZONE } = require('../utils/registerNo');
 const DEFAULT_SITE_TITLE = 'Visitor Access';
 const DEFAULT_WELCOME_MESSAGE = 'Pre-register before you arrive.';
 
+function normalizeLogoPath(value) {
+  if (!value) {
+    return '/images/logo.svg';
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed === '/images/logo.png' ? '/images/logo.svg' : trimmed;
+}
+
 function toBooleanSetting(value) {
   if (typeof value === 'boolean') {
     return value;
@@ -28,7 +37,7 @@ function normalizePublicSettings(rawSettings = {}) {
   return {
     siteTitle: rawSettings.site_title || rawSettings.siteTitle || DEFAULT_SITE_TITLE,
     welcomeMessage: rawSettings.welcome_message || rawSettings.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
-    logoPath: rawSettings.logo_path || rawSettings.logoPath || '/images/logo.png',
+    logoPath: normalizeLogoPath(rawSettings.logo_path || rawSettings.logoPath),
     defaultTimezone: rawSettings.default_timezone || rawSettings.defaultTimezone || DEFAULT_TIME_ZONE,
     pinLength: toNumericSetting(rawSettings.pin_length || rawSettings.pinLength, 6),
     dataRetentionDays: toNumericSetting(rawSettings.data_retention_days || rawSettings.dataRetentionDays, 365),

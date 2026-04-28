@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
 INSERT OR IGNORE INTO app_settings (key, value, updated_at) VALUES
   ('site_title', 'Visitor Access', datetime('now')),
   ('welcome_message', 'Pre-register before you arrive.', datetime('now')),
-  ('logo_path', '/images/logo.png', datetime('now')),
+  ('logo_path', '/images/logo.svg', datetime('now')),
   ('default_timezone', 'Europe/London', datetime('now')),
   ('pin_length', '6', datetime('now')),
   ('data_retention_days', '365', datetime('now')),

@@ -5,7 +5,7 @@ const { DEFAULT_TIME_ZONE } = require('../utils/registerNo');
 const DEFAULT_SETTINGS = {
   site_title: 'Visitor Access',
   welcome_message: 'Pre-register before you arrive.',
-  logo_path: '/images/logo.png',
+  logo_path: '/images/logo.svg',
   default_timezone: DEFAULT_TIME_ZONE,
   pin_length: '6',
   data_retention_days: '365',
