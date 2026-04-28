@@ -17,6 +17,7 @@ describe('Reception workflow', () => {
   const todayKey = normalizeDateOnly(new Date());
   const tomorrowKey = normalizeDateOnly(new Date(Date.now() + 24 * 60 * 60 * 1000));
   let visitorRepo;
+  let receptionCookie;
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
@@ -27,6 +28,11 @@ describe('Reception workflow', () => {
       dbPath: process.env.DB_FILE
     });
     await visitorRepo.deleteAll();
+
+    const receptionResponse = await request(app)
+      .get('/reception')
+      .expect(200);
+    receptionCookie = receptionResponse.headers['set-cookie'][0].split(';')[0];
   });
 
   afterAll(async () => {
@@ -44,6 +50,7 @@ describe('Reception workflow', () => {
 
     const response = await request(app)
       .post('/api/registrations')
+      .set('Cookie', receptionCookie)
       .send(payload)
       .expect(201);
 
@@ -61,6 +68,7 @@ describe('Reception workflow', () => {
   test('registers a walk-in visitor without a date field', async () => {
     const response = await request(app)
       .post('/api/registrations')
+      .set('Cookie', receptionCookie)
       .send({
         visitor_name: 'Walk-in Visitor',
         host_name: 'Front Desk',
@@ -74,6 +82,12 @@ describe('Reception workflow', () => {
     expect(response.body.data.registerNo).toMatch(/^V\d{8}-\d{4}$/);
     expect(response.body.data.status).toBe('checked_in');
     expect(response.body.data.checkedInAt).toBeTruthy();
+  });
+
+  test('rejects reception APIs without a kiosk session', async () => {
+    await request(app)
+      .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
+      .expect(401);
   });
 
   test('shows today waiting and future registrations', async () => {
@@ -91,12 +105,18 @@ describe('Reception workflow', () => {
 
     const dashboardResponse = await request(app)
       .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
+      .set('Cookie', receptionCookie)
       .expect(200);
 
     expect(dashboardResponse.body.success).toBe(true);
     expect(dashboardResponse.body.data.date).toBe(todayKey);
     expect(dashboardResponse.body.data.pending).toHaveLength(1);
     expect(dashboardResponse.body.data.pending[0].registerNo).toBe(todayRegistration.registerNo);
+    expect(dashboardResponse.body.data.pending[0]).not.toHaveProperty('pinCode');
+    expect(dashboardResponse.body.data.pending[0]).not.toHaveProperty('qrToken');
+    expect(dashboardResponse.body.data.pending[0]).not.toHaveProperty('email');
+    expect(dashboardResponse.body.data.pending[0]).not.toHaveProperty('phone');
+    expect(dashboardResponse.body.data.pending[0]).not.toHaveProperty('notes');
     expect(dashboardResponse.body.data.checkedIn).toHaveLength(0);
     expect(dashboardResponse.body.data.future).toHaveLength(1);
     expect(dashboardResponse.body.data.future[0].registerNo).toBe(tomorrowRegistration.registerNo);
@@ -111,6 +131,7 @@ describe('Reception workflow', () => {
 
     const checkInResponse = await request(app)
       .post('/api/checkin/by-pin')
+      .set('Cookie', receptionCookie)
       .send({ identifier: registration.pinCode })
       .expect(200);
 
@@ -119,8 +140,12 @@ describe('Reception workflow', () => {
     expect(checkInResponse.body.data.status).toBe('checked_in');
     expect(checkInResponse.body.data.checkedInAt).toBeTruthy();
 
+    expect(checkInResponse.body.data).not.toHaveProperty('pinCode');
+    expect(checkInResponse.body.data).not.toHaveProperty('qrToken');
+
     const dashboardResponse = await request(app)
       .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
+      .set('Cookie', receptionCookie)
       .expect(200);
 
     expect(dashboardResponse.body.data.pending).toHaveLength(0);
@@ -137,6 +162,7 @@ describe('Reception workflow', () => {
 
     const checkInResponse = await request(app)
       .post('/api/checkin/by-pin')
+      .set('Cookie', receptionCookie)
       .send({ identifier: registration.registerNo })
       .expect(200);
 
@@ -154,6 +180,7 @@ describe('Reception workflow', () => {
 
     const qrCheckInResponse = await request(app)
       .post('/api/checkin/by-qr')
+      .set('Cookie', receptionCookie)
       .send({ qrToken: registration.qrToken })
       .expect(200);
 
@@ -163,6 +190,7 @@ describe('Reception workflow', () => {
 
     const checkoutResponse = await request(app)
       .post(`/api/checkout/${encodeURIComponent(registration.id)}`)
+      .set('Cookie', receptionCookie)
       .send({})
       .expect(200);
 
@@ -173,6 +201,7 @@ describe('Reception workflow', () => {
 
     const dashboardResponse = await request(app)
       .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
+      .set('Cookie', receptionCookie)
       .expect(200);
 
     expect(dashboardResponse.body.data.checkedIn).toHaveLength(0);

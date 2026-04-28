@@ -4,6 +4,7 @@ const { assertNodeRuntime } = require('./src/utils/runtime');
 assertNodeRuntime();
 const config = require('./src/config/config');
 const logger = require('./src/utils/logger');
+const { issueReceptionSessionCookie } = require('./src/utils/receptionAuth');
 
 // Middleware
 const {
@@ -28,6 +29,7 @@ const adminRoutes = require('./src/routes/adminRoutes');
  * Creation of the Express application
  */
 const app = express();
+app.set('trust proxy', 1);
 
 /**
  * Security middleware
@@ -70,6 +72,7 @@ app.get('/result/:registerNo', (req, res) => {
 });
 
 app.get('/reception', (req, res) => {
+  issueReceptionSessionCookie(res);
   res.sendFile(path.join(__dirname, 'public', 'reception.html'));
 });
 

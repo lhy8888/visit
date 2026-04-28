@@ -3,10 +3,20 @@ const cors = require('cors');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 
+function resolveCorsOriginConfig() {
+  if (config.NODE_ENV !== 'production') {
+    return true;
+  }
+
+  if (Array.isArray(config.CORS_ORIGINS) && config.CORS_ORIGINS.length > 0) {
+    return config.CORS_ORIGINS;
+  }
+
+  return false;
+}
+
 const corsOptions = {
-  origin: config.NODE_ENV === 'production'
-    ? ['https://yourdomain.com']
-    : true,
+  origin: resolveCorsOriginConfig(),
   credentials: true,
   optionsSuccessStatus: 200
 };

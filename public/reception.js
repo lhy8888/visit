@@ -54,6 +54,7 @@ function getTodayDateKey() {
 
 async function apiJson(url, options = {}) {
   const response = await fetch(url, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {})

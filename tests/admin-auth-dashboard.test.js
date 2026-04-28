@@ -17,6 +17,7 @@ describe('Admin authentication and dashboard', () => {
   const todayKey = normalizeDateOnly(new Date());
   const tomorrowKey = normalizeDateOnly(new Date(Date.now() + 24 * 60 * 60 * 1000));
   let visitorRepo;
+  let receptionCookie;
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
@@ -27,6 +28,11 @@ describe('Admin authentication and dashboard', () => {
       dbPath: process.env.DB_FILE
     });
     await visitorRepo.deleteAll();
+
+    const receptionResponse = await request(app)
+      .get('/reception')
+      .expect(200);
+    receptionCookie = receptionResponse.headers['set-cookie'][0].split(';')[0];
   });
 
   afterAll(async () => {
@@ -105,6 +111,7 @@ describe('Admin authentication and dashboard', () => {
 
     await request(app)
       .post('/api/checkin/by-pin')
+      .set('Cookie', receptionCookie)
       .send({ identifier: checkedInVisitor.pinCode })
       .expect(200);
 

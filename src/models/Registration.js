@@ -25,6 +25,7 @@ class Registration {
 
       phone: Joi.string()
         .trim()
+        .max(32)
         .pattern(config.VALIDATION.PHONE_PATTERN)
         .allow('', null)
         .messages({

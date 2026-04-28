@@ -122,6 +122,10 @@ class AdminUserRepository {
     const defaultUsername = String(config.ADMIN_DEFAULT_USERNAME || 'admin').trim();
     const defaultPassword = String(config.ADMIN_DEFAULT_PASSWORD || '123456');
 
+    if (config.NODE_ENV === 'production' && defaultPassword === '123456') {
+      throw new Error('Change ADMIN_DEFAULT_PASSWORD before production use');
+    }
+
     if (!defaultUsername || !defaultPassword) {
       logger.warn('Default admin credentials are not configured', {
         defaultUsername

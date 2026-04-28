@@ -1,6 +1,7 @@
 const winston = require('winston');
 const path = require('path');
 const config = require('../config/config');
+const { redactSensitiveData } = require('./privacy');
 
 /**
  * Configuration du logger Winston
@@ -31,6 +32,24 @@ const logger = winston.createLogger({
     })
   ]
 });
+
+function wrapLoggerMethod(methodName) {
+  const original = logger[methodName].bind(logger);
+
+  logger[methodName] = (message, meta, ...rest) => {
+    if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
+      return original(message, redactSensitiveData(meta), ...rest);
+    }
+
+    if (meta !== undefined) {
+      return original(message, meta, ...rest);
+    }
+
+    return original(message);
+  };
+}
+
+['info', 'warn', 'error'].forEach(wrapLoggerMethod);
 
 // En développement, log aussi dans la console
 if (config.NODE_ENV !== 'production') {
@@ -64,6 +83,7 @@ logger.logApiError = (error, req, res) => {
     method: req.method,
     url: req.url,
     body: req.body,
+    query: req.query,
     statusCode: res.statusCode,
     timestamp: new Date().toISOString()
   });

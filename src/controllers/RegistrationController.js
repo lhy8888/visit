@@ -7,7 +7,9 @@ class RegistrationController {
   }
 
   createRegistration = asyncHandler(async (req, res) => {
-    const registration = await this.registrationService.createRegistration(req.body);
+    const registration = await this.registrationService.createRegistration(req.body, {
+      receptionSession: req.receptionSession || null
+    });
     const isReceptionCheckIn = registration.source === 'reception';
 
     res.status(201).json({

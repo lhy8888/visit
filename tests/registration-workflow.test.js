@@ -13,7 +13,9 @@ const VisitorRepository = require('../src/repositories/VisitorRepository');
 const app = require('../server');
 
 describe('Registration workflow', () => {
+  const todayKey = new Date().toISOString().slice(0, 10);
   let visitorRepo;
+  let receptionCookie;
 
   beforeAll(async () => {
     await fs.mkdir(testDataDir, { recursive: true });
@@ -24,6 +26,11 @@ describe('Registration workflow', () => {
       dbPath: process.env.DB_FILE
     });
     await visitorRepo.deleteAll();
+
+    const receptionResponse = await request(app)
+      .get('/reception')
+      .expect(200);
+    receptionCookie = receptionResponse.headers['set-cookie'][0].split(';')[0];
   });
 
   afterAll(async () => {
@@ -39,7 +46,7 @@ describe('Registration workflow', () => {
       phone: '+44 7000 000000',
       host_name: 'John Smith',
       visit_purpose: 'Project meeting',
-      scheduled_date: '2026-04-23'
+      scheduled_date: todayKey
     };
 
     const createResponse = await request(app)
@@ -89,6 +96,7 @@ describe('Registration workflow', () => {
 
     const currentResponse = await request(app)
       .get(`/api/reception/today?date=${encodeURIComponent(todayKey)}`)
+      .set('Cookie', receptionCookie)
       .expect(200);
 
     expect(currentResponse.body.data.date).toBe(todayKey);

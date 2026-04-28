@@ -102,7 +102,8 @@ class DashboardService {
         scheduledFrom: filters.from || filters.scheduledFrom || null,
         scheduledTo: filters.to || filters.scheduledTo || null,
         status: filters.status || filters.statuses || null,
-        keyword: filters.keyword || null
+        keyword: filters.keyword || null,
+        sort: filters.sort || null
       };
 
       const visitors = await this.visitorRepository.searchRegistrations(normalizedFilters);
@@ -131,7 +132,7 @@ class DashboardService {
         : resolvedReferenceDate;
       const timeZone = await this.settingsRepository.get('default_timezone', DEFAULT_TIME_ZONE);
       const visitors = await this.visitorRepository.searchRegistrations({
-        orderBy: 'checked_in_at ASC, registered_at ASC, id ASC'
+        sort: 'checkedInAtAsc'
       });
 
       const confirmedArrivals = visitors.filter((registration) => isConfirmedArrival(registration));

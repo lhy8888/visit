@@ -36,6 +36,17 @@ const VISITOR_COLUMNS = [
   'statut'
 ];
 
+const SORT_ORDER_WHITELIST = {
+  scheduledDateAsc: 'scheduled_date ASC, registered_at ASC, id ASC',
+  scheduledDateDesc: 'scheduled_date DESC, registered_at DESC, id DESC',
+  registeredAtAsc: 'registered_at ASC, id ASC',
+  registeredAtDesc: 'registered_at DESC, id DESC',
+  checkedInAtAsc: 'checked_in_at ASC, id ASC',
+  checkedInAtDesc: 'checked_in_at DESC, id DESC',
+  checkedOutAtAsc: 'checked_out_at ASC, id ASC',
+  checkedOutAtDesc: 'checked_out_at DESC, id DESC'
+};
+
 const VISITOR_UPSERT_SQL = `
   INSERT INTO visitors (${VISITOR_COLUMNS.join(', ')})
   VALUES (${VISITOR_COLUMNS.map((column) => `$${column}`).join(', ')})
@@ -193,6 +204,20 @@ function escapeLikePattern(value) {
   return String(value).replace(/[\\%_]/g, '\\$&');
 }
 
+function resolveOrderBy(filters = {}) {
+  const sortKey = String(filters.sort || '').trim();
+  if (sortKey && SORT_ORDER_WHITELIST[sortKey]) {
+    return SORT_ORDER_WHITELIST[sortKey];
+  }
+
+  const rawOrderBy = String(filters.orderBy || '').trim();
+  if (rawOrderBy && Object.values(SORT_ORDER_WHITELIST).includes(rawOrderBy)) {
+    return rawOrderBy;
+  }
+
+  return SORT_ORDER_WHITELIST.scheduledDateAsc;
+}
+
 class VisitorSqliteRepository {
   constructor(options = {}) {
     this.dbPath = options.dbPath || config.DB_FILE;
@@ -259,7 +284,7 @@ class VisitorSqliteRepository {
     return Number(row?.count || 0);
   }
 
-  _queryRegistrationRows(whereClauses = [], params = [], orderBy = 'scheduled_date ASC, registered_at ASC, id ASC') {
+  _queryRegistrationRows(whereClauses = [], params = [], orderBy = SORT_ORDER_WHITELIST.scheduledDateAsc) {
     const clauses = whereClauses.filter(Boolean);
     const sql = `SELECT * FROM visitors${clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : ''} ORDER BY ${orderBy}`;
     return this.db.prepare(sql).all(...params);
@@ -456,7 +481,7 @@ class VisitorSqliteRepository {
         params.push(like, like, like, like, like, like, like, like, like);
       }
 
-      const orderBy = filters.orderBy || 'scheduled_date ASC, registered_at ASC, id ASC';
+      const orderBy = resolveOrderBy(filters);
       const rows = this._queryRegistrationRows(whereClauses, params, orderBy);
       return rows.map((row) => mapRowToRegistration(row));
     } catch (error) {
@@ -472,7 +497,7 @@ class VisitorSqliteRepository {
     return this.searchRegistrations({
       scheduledDate,
       status: statuses,
-      orderBy: 'registered_at ASC, id ASC'
+      sort: 'registeredAtAsc'
     });
   }
 
@@ -480,7 +505,7 @@ class VisitorSqliteRepository {
     return this.searchRegistrations({
       scheduledAfter: afterDate,
       status: statuses,
-      orderBy: 'scheduled_date ASC, registered_at ASC, id ASC'
+      sort: 'scheduledDateAsc'
     });
   }
 

@@ -1,7 +1,44 @@
 const VisitorRepository = require('../repositories/VisitorRepository');
+const SettingsRepository = require('../repositories/SettingsRepository');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { normalizeDateOnly } = require('../utils/registerNo');
+
+function toReceptionView(registration) {
+  if (!registration) {
+    return null;
+  }
+
+  return {
+    id: registration.id,
+    registerNo: registration.registerNo || registration.register_no,
+    visitorName: registration.visitorName || registration.visitor_name,
+    company: registration.company,
+    hostName: registration.hostName || registration.host_name,
+    visitPurpose: registration.visitPurpose || registration.visit_purpose,
+    scheduledDate: registration.scheduledDate || registration.scheduled_date,
+    registeredAt: registration.registeredAt || registration.registered_at,
+    checkedInAt: registration.checkedInAt || registration.checked_in_at || null,
+    checkedOutAt: registration.checkedOutAt || registration.checked_out_at || null,
+    status: registration.status,
+    source: registration.source
+  };
+}
+
+function sanitizeReceptionSnapshot(snapshot = {}) {
+  return {
+    date: snapshot.date,
+    pending: Array.isArray(snapshot.pending) ? snapshot.pending.map(toReceptionView) : [],
+    checkedIn: Array.isArray(snapshot.checkedIn) ? snapshot.checkedIn.map(toReceptionView) : [],
+    future: Array.isArray(snapshot.future) ? snapshot.future.map(toReceptionView) : [],
+    counts: snapshot.counts || {
+      pending: 0,
+      checkedIn: 0,
+      future: 0,
+      total: 0
+    }
+  };
+}
 
 function toNullableString(value) {
   if (value === undefined || value === null) {
@@ -23,6 +60,7 @@ function isRegisterNoLike(value) {
 class ReceptionService {
   constructor(options = {}) {
     this.visitorRepository = options.visitorRepository || new VisitorRepository();
+    this.settingsRepository = options.settingsRepository || new SettingsRepository();
   }
 
   _normalizeIdentifier(input) {
@@ -78,13 +116,14 @@ class ReceptionService {
   async getTodayDashboard(date = new Date()) {
     try {
       const dashboard = await this.visitorRepository.getReceptionSnapshot(date);
+      const sanitizedDashboard = sanitizeReceptionSnapshot(dashboard);
 
       logger.info('Reception dashboard loaded', {
-        date: dashboard.date,
-        counts: dashboard.counts
+        date: sanitizedDashboard.date,
+        counts: sanitizedDashboard.counts
       });
 
-      return dashboard;
+      return sanitizedDashboard;
     } catch (error) {
       logger.error('Failed to load reception dashboard', {
         error: error.message,
@@ -96,6 +135,11 @@ class ReceptionService {
 
   async checkInByPin(payload = {}) {
     try {
+      const enablePinCheckin = await this.settingsRepository.getBoolean('enable_pin_checkin', true);
+      if (!enablePinCheckin) {
+        throw new AppError('PIN check-in disabled', 403);
+      }
+
       const identifier = this._normalizeIdentifier(
         payload.identifier || payload.pin || payload.registerNo || payload.value
       );
@@ -110,7 +154,7 @@ class ReceptionService {
       });
 
       return {
-        registration: result.registration,
+        registration: toReceptionView(result.registration),
         alreadyCheckedIn: result.alreadyCheckedIn,
         lookupType: lookup.lookupType,
         message: result.alreadyCheckedIn
@@ -128,6 +172,11 @@ class ReceptionService {
 
   async checkInByQr(payload = {}) {
     try {
+      const enableQrCheckin = await this.settingsRepository.getBoolean('enable_qr_checkin', true);
+      if (!enableQrCheckin) {
+        throw new AppError('QR check-in disabled', 403);
+      }
+
       const qrToken = this._normalizeQrToken(
         payload.qrToken || payload.qrContent || payload.token || payload.value
       );
@@ -149,7 +198,7 @@ class ReceptionService {
       });
 
       return {
-        registration: result.registration,
+        registration: toReceptionView(result.registration),
         alreadyCheckedIn: result.alreadyCheckedIn,
         lookupType: 'qr',
         message: result.alreadyCheckedIn
@@ -180,7 +229,7 @@ class ReceptionService {
       });
 
       return {
-        registration: result.registration,
+        registration: toReceptionView(result.registration),
         alreadyCheckedOut: result.alreadyCheckedOut,
         message: result.alreadyCheckedOut
           ? 'Le visiteur est deja enregistre comme parti'

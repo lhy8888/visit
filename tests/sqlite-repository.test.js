@@ -106,4 +106,27 @@ describe('SQLite VisitorRepository', () => {
     const visitors = await repository.findAll();
     expect(visitors).toHaveLength(0);
   });
+
+  test('ignores raw SQL fragments in sort filters', async () => {
+    dbPath = path.join(testDir, `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
+    repository = new VisitorRepository({ dbPath });
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+
+    await repository.createRegistration({
+      visitor_name: 'Safe One',
+      host_name: 'Desk',
+      scheduled_date: todayKey,
+      source: 'web',
+      pin_code: '1234',
+      qr_token: 'token-one'
+    });
+
+    const rows = await repository.searchRegistrations({
+      sort: 'scheduledDateDesc; DROP TABLE visitors'
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].visitorName || rows[0].visitor_name).toBe('Safe One');
+  });
 });

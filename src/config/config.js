@@ -15,6 +15,13 @@ module.exports = {
   ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || '123456',
   ADMIN_SESSION_COOKIE_NAME: process.env.ADMIN_SESSION_COOKIE_NAME || 'visitor_admin_session',
   ADMIN_SESSION_TTL_HOURS: parseInt(process.env.ADMIN_SESSION_TTL_HOURS, 10) || 12,
+  RECEPTION_SESSION_COOKIE_NAME: process.env.RECEPTION_SESSION_COOKIE_NAME || 'visitor_reception_session',
+  RECEPTION_SESSION_TTL_HOURS: parseInt(process.env.RECEPTION_SESSION_TTL_HOURS, 10) || 12,
+  RECEPTION_SESSION_SECRET: process.env.RECEPTION_SESSION_SECRET || null,
+  CORS_ORIGINS: String(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   ANONYMIZATION_DAYS: parseInt(process.env.ANONYMIZATION_DAYS, 10) || 365,
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 2000000,
 

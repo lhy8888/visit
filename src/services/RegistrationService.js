@@ -9,6 +9,8 @@ const { normalizeDateOnly } = require('../utils/registerNo');
 const { generatePin, normalizePinLength } = require('../utils/pin');
 const { buildQrContent, generateQrDataUrl } = require('../utils/qr');
 
+const MAX_PRE_REGISTRATION_ADVANCE_DAYS = 90;
+
 function toNullableString(value) {
   if (value === undefined || value === null) {
     return null;
@@ -38,6 +40,7 @@ class RegistrationService {
 
   _normalizeInput(data = {}) {
     const source = data.source === 'reception' ? 'reception' : 'web';
+    const receptionDate = source === 'reception' ? normalizeDateOnly(new Date()) : null;
     return {
       visitorName: combineVisitorName(data),
       company: toNullableString(data.company || data.societe),
@@ -46,7 +49,7 @@ class RegistrationService {
       hostName: toNullableString(data.host_name || data.hostName || data.personneVisitee),
       visitPurpose: toNullableString(data.visit_purpose || data.visitPurpose),
       scheduledDate: normalizeDateOnly(
-        data.scheduled_date || data.scheduledDate || data.date || (source === 'reception' ? new Date() : null)
+        receptionDate || data.scheduled_date || data.scheduledDate || data.date || null
       ),
       notes: toNullableString(data.notes),
       source
@@ -104,7 +107,7 @@ class RegistrationService {
     };
   }
 
-  async createRegistration(input) {
+  async createRegistration(input, options = {}) {
     try {
       const normalized = this._normalizeInput(input);
       const { error, value } = Registration.validateRegistration(normalized);
@@ -114,6 +117,21 @@ class RegistrationService {
           `Invalid registration data: ${error.details.map((detail) => detail.message).join(', ')}`,
           400
         );
+      }
+
+      const todayKey = normalizeDateOnly(new Date());
+      const maxDateKey = normalizeDateOnly(
+        new Date(Date.now() + MAX_PRE_REGISTRATION_ADVANCE_DAYS * 24 * 60 * 60 * 1000)
+      );
+      if (value.scheduledDate < todayKey || value.scheduledDate > maxDateKey) {
+        throw new AppError(
+          `Scheduled date must be between today and the next ${MAX_PRE_REGISTRATION_ADVANCE_DAYS} days`,
+          400
+        );
+      }
+
+      if (value.source === 'reception' && !options.receptionSession) {
+        throw new AppError('Reception session required', 401);
       }
 
       const pinLength = await this._getPinLength();
