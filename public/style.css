@@ -1043,38 +1043,39 @@ body.admin-page .table-empty {
 body.admin-page {
   background:
     linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
-  --shadow: 0 10px 24px rgba(16, 32, 51, 0.06);
+  --shadow: 0 8px 18px rgba(16, 32, 51, 0.05);
 }
 
 body.admin-page .page-shell {
-  padding: 12px 14px 18px;
+  padding: 8px 12px 14px;
 }
 
 body.admin-page .page {
-  width: min(1160px, 100%);
-  gap: 12px;
+  width: min(1120px, 100%);
+  gap: 8px;
 }
 
 body.admin-page .hero {
-  gap: 8px;
+  gap: 4px;
   max-width: 100%;
 }
 
 body.admin-page h1 {
-  font-size: clamp(1.7rem, 2.8vw, 2.8rem);
+  font-size: clamp(1.5rem, 2.3vw, 2.2rem);
+  letter-spacing: -0.03em;
 }
 
 body.admin-page .card {
-  padding: 14px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 12px;
 }
 
 body.admin-page .admin-layout {
-  gap: 12px;
+  gap: 8px;
 }
 
 body.admin-page .admin-section {
-  gap: 10px;
+  gap: 8px;
 }
 
 body.admin-page .admin-section + .admin-section {
@@ -1082,19 +1083,19 @@ body.admin-page .admin-section + .admin-section {
 }
 
 body.admin-page .admin-header h2 {
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 body.admin-page .eyebrow {
-  margin-bottom: 4px;
-  font-size: 0.72rem;
+  margin-bottom: 3px;
+  font-size: 0.70rem;
 }
 
 body.admin-page button,
 body.admin-page .button-link {
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  min-height: 32px;
+  padding: 7px 10px;
+  border-radius: 8px;
   box-shadow: none;
 }
 
@@ -1104,24 +1105,24 @@ body.admin-page .button-link.secondary {
 }
 
 body.admin-page .admin-actions {
-  gap: 8px;
+  gap: 6px;
 }
 
 body.admin-page .admin-stats {
-  gap: 8px;
+  gap: 6px;
 }
 
 body.admin-page .metric {
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
 }
 
 body.admin-page .metric strong {
-  font-size: 0.98rem;
+  font-size: 0.94rem;
 }
 
 body.admin-page .table-wrap {
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 body.admin-page .admin-table {
@@ -1129,60 +1130,67 @@ body.admin-page .admin-table {
 }
 
 body.admin-page .admin-table thead th {
-  padding: 8px 10px;
-  font-size: 0.70rem;
+  padding: 6px 8px;
+  font-size: 0.68rem;
 }
 
 body.admin-page .admin-table tbody td {
-  padding: 8px 10px;
-  line-height: 1.25;
+  padding: 6px 8px;
+  line-height: 1.15;
 }
 
 body.admin-page .settings-row {
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 body.admin-page .pill {
-  min-height: 24px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 8px;
+  font-size: 0.8rem;
 }
 
 body.admin-page .table-visitor {
-  gap: 2px;
+  gap: 1px;
 }
 
 body.admin-page .table-visitor strong {
-  font-size: 0.92rem;
-  line-height: 1.2;
+  font-size: 0.88rem;
+  line-height: 1.15;
 }
 
 body.admin-page .table-ref {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   line-height: 1.2;
 }
 
 body.admin-page .table-code {
   color: var(--muted);
-  font-size: 0.76rem;
-  line-height: 1.2;
+  font-size: 0.72rem;
+  line-height: 1.15;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   letter-spacing: 0.02em;
 }
 
 body.admin-page .table-person {
   color: var(--text);
-  font-size: 0.88rem;
-  line-height: 1.25;
+  font-size: 0.84rem;
+  line-height: 1.15;
 }
 
 body.admin-page .table-empty {
-  padding: 18px 10px;
+  padding: 12px 8px;
 }
 
 body.admin-page .status {
   min-height: 1.2em;
-  margin-top: 4px;
-  font-size: 0.92rem;
+  margin-top: 2px;
+  font-size: 0.88rem;
+}
+
+body.admin-page .admin-session-user {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
 }
 
 .qr-box img {

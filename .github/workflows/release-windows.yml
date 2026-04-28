@@ -34,6 +34,9 @@ jobs:
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
             dist/*.exe

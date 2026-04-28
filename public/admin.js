@@ -301,7 +301,13 @@ function renderVisitorTable(items = [], mode = 'today') {
 
     const personToVisitCell = document.createElement('td');
     personToVisitCell.className = 'table-person';
-    personToVisitCell.textContent = visitor.hostName || visitor.host_name || visitor.personneVisitee || '-';
+    personToVisitCell.textContent = visitor.visitedPerson
+      || visitor.visited_person
+      || visitor.personToVisit
+      || visitor.hostName
+      || visitor.host_name
+      || visitor.personneVisitee
+      || '-';
 
     const dateCell = document.createElement('td');
     dateCell.textContent = formatDateOnly(
