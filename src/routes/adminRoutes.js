@@ -5,6 +5,17 @@ const { requireAdminAuth } = require('../middleware/adminAuth');
 const router = express.Router();
 const adminController = new AdminController();
 
+const disableAdminCache = (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+    Pragma: 'no-cache',
+    Expires: '0'
+  });
+  next();
+};
+
+router.use(disableAdminCache);
+
 router.post('/login', adminController.login);
 router.post('/logout', adminController.logout);
 router.get('/session', adminController.getSession);

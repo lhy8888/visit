@@ -110,6 +110,7 @@ function toQueryString(params = {}) {
 
 async function apiRequest(url, options = {}) {
   const response = await fetch(url, {
+    cache: 'no-store',
     credentials: 'include',
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),

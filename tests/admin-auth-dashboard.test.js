@@ -77,6 +77,21 @@ describe('Admin authentication and dashboard', () => {
     expect(response.body.error.message).toBe('Admin session required');
   });
 
+  test('serves the admin shell and session endpoint without caching', async () => {
+    const pageResponse = await request(app)
+      .get('/admin')
+      .expect(200);
+
+    expect(String(pageResponse.headers['cache-control'] || '')).toContain('no-store');
+
+    const sessionResponse = await request(app)
+      .get('/api/admin/session')
+      .expect(200);
+
+    expect(String(sessionResponse.headers['cache-control'] || '')).toContain('no-store');
+    expect(sessionResponse.body.data.authenticated).toBe(false);
+  });
+
   test('logs in with username and password and exposes the session', async () => {
     const agent = await loginAsAdmin();
 
