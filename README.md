@@ -132,25 +132,17 @@ For development or internal use, `npm install` + `npm start` is still the simple
 
 ## Ubuntu deployment
 
-If you want to run Visitor Access on Ubuntu as a `systemd` service, use the Ubuntu guide:
+Ubuntu guide: [UBUNTU.md](./UBUNTU.md)
 
-- [UBUNTU.md](./UBUNTU.md)
-
-The recommended install is a single fixed-path GitHub bootstrap:
+Fixed-path commands:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/lhy8888/visit/main/scripts/ubuntu/bootstrap.sh | sudo bash
-```
-
-After installation, the app lives in `/opt/visitor-access`.
-
-Use these fixed-path commands for maintenance:
-
-```bash
 sudo bash /opt/visitor-access/scripts/ubuntu/update.sh
 sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh
-sudo bash /opt/visitor-access/scripts/ubuntu/uninstall.sh --purge
 ```
+
+Add `--purge` to the uninstall command if you also want to remove the stored SQLite data and logs.
 
 ## Project positioning
 
